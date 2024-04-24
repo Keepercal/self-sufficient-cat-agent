@@ -89,7 +89,7 @@ Make sure that the project is open within the Unity editor. If nothing appears w
 
 Once this is loaded, cd to the ml-agents repo (the one that was cloned earlier) and run the following command:
 
-`mlagents-learn config.dsp_config.yaml" --run-id==Cat-Agent-Run-1"
+`mlagents-learn config.dsp_config.yaml" --run-id==Cat-Agent-Run-1"`
 
 Note that the name of the `run-id` can be changed to whatever you desire.
 
