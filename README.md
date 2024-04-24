@@ -64,7 +64,7 @@ On Windows, you'll have to install the PyTorch package separately prior to insta
 
 pip3 install torch~=2.2.1 --index-url https://download.pytorch.org/whl/cu121
 
-### (OS X) Installing GRPC libraries#
+### (OS X) Installing GRPC libraries
 
 On OS X, you may need to explicitly install the GRPC runtime libraries to avoid hitting errors when training like dlopen(/Users/alex.mccarthy/miniconda3/envs/mlagents/lib/python3.10/site-packages/grpc/_cython/cygrpc.cpython-310-darwin.so, 0x0002): symbol not found in flat namespace '_CFRelease'.
 
@@ -77,6 +77,22 @@ To install the mlagents Python package, activate the `mlagents` virtual environm
 `python -m pip install ./ml-agents-` <br>
 `python -m pip install ./ml-agents` <br>
 
+After running these commands, run `mlagents-learn --help` to verify if everything is correctly installed.
+
 ## Project config file
 
 There is a YAML file called `dsp_config.yaml` within the `AdditionalFiles` folder of the project clone. Copy this file and place it in `/mlagents/config/`
+
+# Running the project
+
+Make sure that the project is open within the Unity editor. If nothing appears when opening the editor, open Assets/Scenes/TrainingScene2. You should see a number of GameObjects appear in the hierarchy as well as all the GameObjects within the scene.
+
+Once this is loaded, cd to the ml-agents repo (the one that was cloned earlier) and run the following command:
+
+`mlagents-learn config.dsp_config.yaml" --run-id==Cat-Agent-Run-1"
+
+Note that the name of the `run-id` can be changed to whatever you desire.
+
+After running this command, head back to the Unity editor. Press the play button at the top and the agent will begin training.
+
+
