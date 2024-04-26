@@ -62,7 +62,7 @@ Installing the mlagents Python package involves installing other Python packages
 
 On Windows, you'll have to install the PyTorch package separately prior to installing ML-Agents in order to make sure the cuda-enabled version is used, rather than the CPU-only version. Activate your virtual environment and run from the command line:
 
-pip3 install torch~=2.2.1 --index-url https://download.pytorch.org/whl/cu121
+`pip3 install torch~=2.2.1 --index-url https://download.pytorch.org/whl/cu121`
 
 ### (OS X) Installing GRPC libraries
 
