@@ -20,11 +20,16 @@ using Unity.MLAgents.Actuators;
 //-----------------------------------------
 public class CatAgent : Agent
 {
+
+    public Vector2 gridSize = new Vector2(1, 1);
+    private Vector3 targetedPosition;
+    private bool isMoving = false;
     //-----------------------------------------
     // Environment class members
     //-----------------------------------------
 
-    public EnvironmentController environment; // The environment controller
+    //public EnvironmentController environment; // The environment controller
+    public GridObjectSpawner gridObjectSpawner; // Reference to the grid object spawner
     
     Transform trainigAreaTransform;
     BoxCollider2D trainingAreaCollider;
@@ -33,7 +38,7 @@ public class CatAgent : Agent
     private string currentTriggerTag;
 
     //-----------------------------------------
-    // Agent components class members
+    // Agent component class members
     //-----------------------------------------
 
     Rigidbody2D rBody; // Agent rigidbody
@@ -75,6 +80,7 @@ public class CatAgent : Agent
     GameObject funSource;
     GameObject waterSource; 
     GameObject foodSource; 
+
     //-----------------------------------------
     // Interactable objects' collider class members
     //-----------------------------------------
@@ -95,7 +101,7 @@ public class CatAgent : Agent
     private float moveSpeed = 150f; // The force multiplier for the agent's movement
     private int regenRate = 5; // The rate at which the agent's needs regenerate
 
-    public int numDeaths; // The number of deaths the agent has had
+    public int numDeaths; // The number times the agent has died
 
     private Vector2 targetPosition; // The target position for the agent to move to
     private Vector2 previousAgentPosition; // The agent's previous position
@@ -105,6 +111,8 @@ public class CatAgent : Agent
     //-----------------------------------------
     void Start()
     {
+        gridObjectSpawner.SpawnObjects();
+
         //-----------------------------------------
         // References to the agent's components
         //-----------------------------------------
@@ -122,20 +130,20 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Environment colliders
         //-----------------------------------------
-        trainingAreaCollider = environment.trainingArea.GetComponent<BoxCollider2D>();
+        //trainingAreaCollider = environment.trainingArea.GetComponent<BoxCollider2D>();
 
-        funCollider = funSource.GetComponent<Collider2D>();
         waterCollider = waterSource.GetComponent<Collider2D>();
         foodCollider = foodSource.GetComponent<Collider2D>();
+        funCollider = funSource.GetComponent<Collider2D>();
 
         //-----------------------------------------
         // Environment transforms
         //-----------------------------------------
-        trainigAreaTransform = environment.trainingArea.GetComponent<Transform>();
+        //trainigAreaTransform = environment.trainingArea.GetComponent<Transform>();
 
-        funTransform = funSource.GetComponent<Transform>();
         waterTransform = waterSource.GetComponent<Transform>();
         foodTransform = foodSource.GetComponent<Transform>();
+        funTransform = funSource.GetComponent<Transform>();
     }
 
     //-----------------------------------------
@@ -147,7 +155,8 @@ public class CatAgent : Agent
         // Agent logic
         //-----------------------------------------
         rBody.velocity = Vector2.zero; // Reset the agent's velocity
-        transform.position = environment.RandomisePosition(agentCollider); //Reset the agent's position
+        //transform.position = environment.RandomisePosition(agentCollider); //Reset the agent's position
+        transform.position = new Vector3(0, 0, -1);
         
         ResetNeeds(); // Reset the agent's needs
         
@@ -155,9 +164,11 @@ public class CatAgent : Agent
         // Environment logic
         //-----------------------------------------        
         // Randomise the position of the interactable objects
-        funTransform.position = environment.RandomisePosition(funCollider); 
+        /*funTransform.position = environment.RandomisePosition(funCollider); 
         waterTransform.position = environment.RandomisePosition(waterCollider); 
-        foodTransform.position = environment.RandomisePosition(foodCollider); 
+        foodTransform.position = environment.RandomisePosition(foodCollider);*/
+
+        gridObjectSpawner.RepositionObjects();
 
         //environment.SpawnObstacles(); // Spawn the obstacles
     }
@@ -225,19 +236,47 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Continuous actions
         //-----------------------------------------
-        Vector2 controlSignal = Vector2.zero;
+        /*Vector2 controlSignal = Vector2.zero;
 
         controlSignal.x = actionBuffers.ContinuousActions[0]; // (X Axis) Upwards force
         controlSignal.y = actionBuffers.ContinuousActions[1]; // (Y Axis) Sideways force
 
-        rBody.AddForce(controlSignal * moveSpeed); // Control for agent movement
+        rBody.AddForce(controlSignal * moveSpeed); // Control for agent movement*/
+
+        //-----------------------------------------
+        // Discrete actions
+        //-----------------------------------------
+        int action = actionBuffers.DiscreteActions[0];
+
+        switch(action)
+        {
+            case 0:
+                Move(Vector2.up);
+                Debug.Log("Moving up");
+                break;
+            case 1:
+                Move(Vector2.down);
+                Debug.Log("Moving up");
+                break;
+            case 2:
+                Move(Vector2.left);
+                break;
+            case 3:
+                Move(Vector2.right);
+                break;
+            default:
+                break;
+        }
 
         //-----------------------------------------
         // Reward or punish the agent based on it's distance to the action target 
         //-----------------------------------------
-        float guideReward = GuideAgent(transform.position, waterTransform.position, previousAgentPosition);
+        float guideReward = 0;
+        
+        guideReward += GuideAgent(transform.position, waterTransform.position, previousAgentPosition);
         guideReward += GuideAgent(transform.position, foodTransform.position, previousAgentPosition);
         guideReward += GuideAgent(transform.position, funTransform.position, previousAgentPosition);
+
         AddReward(guideReward);
 
         //-----------------------------------------
@@ -263,10 +302,10 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Normalise the agent's needs
         //-----------------------------------------
-        float normalisedHealth = Normalise(agentHealth);
-        float normalisedThirst = Normalise(agentThirst);
-        float normalisedHunger = Normalise(agentHunger);
-        float normalisedFun = Normalise(agentFun);
+        float normalisedHealth = Normalise(ref agentHealth);
+        float normalisedThirst = Normalise(ref agentThirst);
+        float normalisedHunger = Normalise(ref agentHunger);
+        float normalisedFun = Normalise(ref agentFun);
 
         float minNeed = Mathf.Min(normalisedThirst, normalisedHunger, normalisedFun);
 
@@ -419,7 +458,7 @@ public class CatAgent : Agent
     //-----------------------------------------
     // HELPER FUNCTION: Normalise the agent's needs to the range of -1,1
     //-----------------------------------------
-    private float Normalise(int value)
+    private float Normalise(ref int value)
     {
         return value / defaultValue;
     }
@@ -468,7 +507,7 @@ public class CatAgent : Agent
     //-----------------------------------------
     // Heuristic function for manual control
     //-----------------------------------------
-    public override void Heuristic(in ActionBuffers actionsOut)
+    /*public override void Heuristic(in ActionBuffers actionsOut)
     {
         var continuousActionsOut = actionsOut.ContinuousActions;
         continuousActionsOut[0] = Input.GetAxis("Horizontal");
@@ -478,5 +517,59 @@ public class CatAgent : Agent
         {
             EndEpisode();
         }
+    }*/
+
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        if(!isMoving)
+        {
+            if (Input.GetKey(KeyCode.UpArrow))
+            {
+                Move(Vector2.up);
+            }
+            else if (Input.GetKey(KeyCode.DownArrow))
+            {
+                Move(Vector2.down);
+            }
+            else if (Input.GetKey(KeyCode.LeftArrow))
+            {
+                Move(Vector2.left);
+            }
+            else if (Input.GetKey(KeyCode.RightArrow))
+            {
+                Move(Vector2.right);
+            }
+        }
     }
+
+    void Move(Vector2 direction)
+    {
+        Vector3 start = transform.position;
+        Vector3 end = start + new Vector3(direction.x * gridSize.x, direction.y * gridSize.y, 0);
+
+        if (IsWithinBounds(end))
+        {
+            targetedPosition = end;
+            isMoving = true;
+        }
+    }
+
+    bool IsWithinBounds(Vector3 position)
+    {
+        return true;
+    }
+
+    void FixedUpdate()
+    {
+        if (isMoving)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, targetedPosition, moveSpeed * Time.deltaTime);
+
+            if ((Vector3)transform.position == targetedPosition)
+            {
+                isMoving = false;
+            }
+        }
+    }
+
 }
