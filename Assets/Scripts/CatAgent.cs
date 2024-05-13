@@ -40,6 +40,11 @@ public class CatAgent : Agent
     Collider2D agentCollider; // Agent collider
     Animator animator; // Agent animator
 
+    public StatusBar healthBar; // Agent health bar
+    public StatusBar thirstBar; // Agent thirst bar
+    public StatusBar hungerBar; // Agent hunger bar
+    public StatusBar funBar; // Agent fun bar
+
     //-----------------------------------------
     // Agent needs class members
     //-----------------------------------------
@@ -206,9 +211,9 @@ public class CatAgent : Agent
         agentFun = Mathf.Clamp(agentFun, 0, defaultValue);
 
         // Decrement the agent's needs over time
-        agentThirst--;
-        agentHunger--;
-        agentFun--;
+        DegenerateNeed(ref agentThirst, thirstBar);
+        DegenerateNeed(ref agentHunger, hungerBar);
+        DegenerateNeed(ref agentFun, funBar);
 
         // Check if the agent is using an object
         // (Actually checks if the agent is within the bounds of an interactable object)
@@ -365,7 +370,7 @@ public class CatAgent : Agent
         // If all needs are above the threshold, increase the agent's health
         if (agentThirst >= midValue && agentHunger >= midValue && agentFun >= midValue)
         {
-            agentHealth += regenRate;
+            RegenerateNeed(ref agentHealth, healthBar);
         }
 
         // If any need is below the threshold, decrement the agent's health
@@ -373,7 +378,7 @@ public class CatAgent : Agent
         {
             if (agentHealth > 0) // If the agent's health is above 0, decrement it
             {
-                agentHealth--;
+                DegenerateNeed(ref agentHealth, healthBar);
             }
             // If the agent's health reaches 0, end the episode
             else
@@ -399,6 +404,18 @@ public class CatAgent : Agent
         agentFun = Random.Range(minValue, maxValue);
     }
 
+    public void DegenerateNeed(ref int need, StatusBar statusBar)
+    {
+        need--;
+        statusBar.SetValue(need);
+    }
+
+    public void RegenerateNeed(ref int need, StatusBar statusBar)
+    {
+        need += regenRate;
+        statusBar.SetValue(need);
+    }
+
     //-----------------------------------------
     // HELPER FUNCTION: Normalise the agent's needs to the range of -1,1
     //-----------------------------------------
@@ -418,15 +435,15 @@ public class CatAgent : Agent
             switch(currentTriggerTag)
             {
                 case "Water Source":
-                    agentThirst += regenRate;
+                    RegenerateNeed(ref agentThirst, thirstBar);
                     AddReward(0.1f);
                     break;
                 case "Food Source":
-                    agentHunger += regenRate;
+                    RegenerateNeed(ref agentHunger, hungerBar);
                     AddReward(0.1f);
                     break;
                 case "Fun Source":
-                    agentFun += regenRate;
+                    RegenerateNeed(ref agentFun, funBar);
                     AddReward(0.1f);
                     break;
                 default:
