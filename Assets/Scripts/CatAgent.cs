@@ -20,22 +20,22 @@ using Unity.MLAgents.Actuators;
 //-----------------------------------------
 public class CatAgent : Agent
 {
-
-    public Vector2 gridSize = new Vector2(1, 1);
-    private Vector3 targetedPosition;
-    private bool isMoving = false;
     //-----------------------------------------
     // Environment class members
     //-----------------------------------------
 
-    //public EnvironmentController environment; // The environment controller
-    public GridObjectSpawner gridObjectSpawner; // Reference to the grid object spawner
-    
-    Transform trainigAreaTransform;
-    BoxCollider2D trainingAreaCollider;
+    public Vector2 gridSize = new Vector2(1, 1); // The size of each grid cell in the environment
+    private Vector3 targetedPosition; // The target position for the agent to move to
 
-    private bool insideTrigger = false;
-    private string currentTriggerTag;
+    // Reference to the environment manager
+    public EnvironmentManager environmentManager;
+
+    // Flags
+    private bool insideTrigger = false; // Flag to check if the agent is within the bounds of an interactable object
+    private bool isMoving = false; // Flag to check if the agent is moving
+
+    // Tags
+    private string currentTriggerTag; // The tag of the current trigger object
 
     //-----------------------------------------
     // Agent component class members
@@ -101,8 +101,6 @@ public class CatAgent : Agent
     private float moveSpeed = 150f; // The force multiplier for the agent's movement
     private int regenRate = 5; // The rate at which the agent's needs regenerate
 
-    public int numDeaths; // The number times the agent has died
-
     private Vector2 targetPosition; // The target position for the agent to move to
     private Vector2 previousAgentPosition; // The agent's previous position
 
@@ -111,7 +109,10 @@ public class CatAgent : Agent
     //-----------------------------------------
     void Start()
     {
-        gridObjectSpawner.SpawnObjects();
+        //-----------------------------------------
+        // Environment initialisation
+        //-----------------------------------------
+        environmentManager.SpawnObjects();
 
         //-----------------------------------------
         // References to the agent's components
@@ -130,8 +131,6 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Environment colliders
         //-----------------------------------------
-        //trainingAreaCollider = environment.trainingArea.GetComponent<BoxCollider2D>();
-
         waterCollider = waterSource.GetComponent<Collider2D>();
         foodCollider = foodSource.GetComponent<Collider2D>();
         funCollider = funSource.GetComponent<Collider2D>();
@@ -139,8 +138,6 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Environment transforms
         //-----------------------------------------
-        //trainigAreaTransform = environment.trainingArea.GetComponent<Transform>();
-
         waterTransform = waterSource.GetComponent<Transform>();
         foodTransform = foodSource.GetComponent<Transform>();
         funTransform = funSource.GetComponent<Transform>();
@@ -154,23 +151,14 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Agent logic
         //-----------------------------------------
-        rBody.velocity = Vector2.zero; // Reset the agent's velocity
-        //transform.position = environment.RandomisePosition(agentCollider); //Reset the agent's position
-        transform.position = new Vector3(0, 0, -1);
+        transform.position = new Vector3(0, 0, -1); //Reset the agent's position to the centre of the training area
         
         ResetNeeds(); // Reset the agent's needs
         
         //-----------------------------------------
         // Environment logic
-        //-----------------------------------------        
-        // Randomise the position of the interactable objects
-        /*funTransform.position = environment.RandomisePosition(funCollider); 
-        waterTransform.position = environment.RandomisePosition(waterCollider); 
-        foodTransform.position = environment.RandomisePosition(foodCollider);*/
-
-        gridObjectSpawner.RepositionObjects();
-
-        //environment.SpawnObstacles(); // Spawn the obstacles
+        //-----------------------------------------
+        environmentManager.RepositionObjects(); // Reposition the interactable objects
     }
 
     //-----------------------------------------
@@ -182,8 +170,6 @@ public class CatAgent : Agent
         // Observations about the agent's state
         //-----------------------------------------
         sensor.AddObservation(this.transform.position); // Po sition
-        sensor.AddObservation(rBody.velocity.x); // Upwards velocity
-        sensor.AddObservation(rBody.velocity.y); // Sideways velocity
 
         //-----------------------------------------
         // Observations about the agent's needs, normalised to range of -1,1
@@ -234,38 +220,36 @@ public class CatAgent : Agent
         AgentHealthCheck();
 
         //-----------------------------------------
-        // Continuous actions
-        //-----------------------------------------
-        /*Vector2 controlSignal = Vector2.zero;
-
-        controlSignal.x = actionBuffers.ContinuousActions[0]; // (X Axis) Upwards force
-        controlSignal.y = actionBuffers.ContinuousActions[1]; // (Y Axis) Sideways force
-
-        rBody.AddForce(controlSignal * moveSpeed); // Control for agent movement*/
-
-        //-----------------------------------------
         // Discrete actions
         //-----------------------------------------
-        int action = actionBuffers.DiscreteActions[0];
+        int movement = actionBuffers.DiscreteActions[0];
 
-        switch(action)
+        if(!isMoving)
         {
-            case 0:
-                Move(Vector2.up);
-                Debug.Log("Moving up");
-                break;
-            case 1:
-                Move(Vector2.down);
-                Debug.Log("Moving up");
-                break;
-            case 2:
-                Move(Vector2.left);
-                break;
-            case 3:
-                Move(Vector2.right);
-                break;
-            default:
-                break;
+            switch(movement)
+            {
+                case 0:
+                    Debug.Log("No movement");
+                    break;
+                case 1:
+                    Move(Vector2.up);
+                    Debug.Log("Moving up");
+                    break;
+                case 2:
+                    Move(Vector2.down);
+                    Debug.Log("Moving down");
+                    break;
+                case 3:
+                    Move(Vector2.left);
+                    Debug.Log("Moving left");
+                    break;
+                case 4:
+                    Move(Vector2.right);
+                    Debug.Log("Moving right");
+                    break;
+                default:
+                    break;
+            }
         }
 
         //-----------------------------------------
@@ -422,7 +406,6 @@ public class CatAgent : Agent
             // If the agent's health reaches 0, end the episode
             else
             {   
-                numDeaths++;
                 AddReward(-5f);
                 EndEpisode();
 
@@ -437,7 +420,7 @@ public class CatAgent : Agent
     //-----------------------------------------
     private void ResetNeeds()
     {
-        agentHealth = Random.Range(minValue, maxValue);
+        agentHealth = defaultValue;
         agentThirst = Random.Range(minValue, maxValue);
         agentHunger = Random.Range(minValue, maxValue);
         agentFun = Random.Range(minValue, maxValue);
@@ -538,6 +521,10 @@ public class CatAgent : Agent
             else if (Input.GetKey(KeyCode.RightArrow))
             {
                 Move(Vector2.right);
+            }
+            else if (Input.GetKey(KeyCode.Space))
+            {
+                EndEpisode();
             }
         }
     }

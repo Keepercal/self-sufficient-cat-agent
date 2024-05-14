@@ -725,6 +725,8 @@ MonoBehaviour:
   parent: {fileID: 1117770061}
   tilemap: {fileID: 1035116701}
   targetTiles: []
+  minDistanceBetweenObjects: 5
+  borderSize: 1
 --- !u!1 &704997472
 GameObject:
   m_ObjectHideFlags: 0
@@ -3864,7 +3866,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BehaviorType
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.VectorActionSpaceType
@@ -3876,7 +3878,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.VectorActionSize.Array.size
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.NumStackedVectorObservations
@@ -3888,7 +3890,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.size
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.m_NumContinuousActions
@@ -3896,7 +3898,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.data[0]
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7980131409818277273, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: TakeActionsBetweenDecisions

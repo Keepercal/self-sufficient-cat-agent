@@ -252,4 +252,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a0dfac1713ed47beaabb26933a10c1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slider: {fileID: 8426307128621570489}
+  statusBar: {fileID: 8426307128621570489}
+  statusBarFill: {fileID: 474730791231603655}
