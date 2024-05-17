@@ -31,11 +31,7 @@ public class CatAgent : Agent
     public EnvironmentManager environmentManager;
 
     // Flags
-    private bool insideTrigger = false; // Flag to check if the agent is within the bounds of an interactable object
     private bool isMoving = false; // Flag to check if the agent is moving
-
-    // Tags
-    private string currentTriggerTag; // The tag of the current trigger object
 
     //-----------------------------------------
     // Agent component class members
@@ -75,25 +71,25 @@ public class CatAgent : Agent
     public int agentThirst;
 
     //-----------------------------------------
-    // Interactable objects' game object class members
+    // Object game object class members
     //-----------------------------------------
     GameObject funSource;
     GameObject waterSource; 
     GameObject foodSource; 
 
     //-----------------------------------------
-    // Interactable objects' collider class members
-    //-----------------------------------------
-    Collider2D funCollider; 
-    Collider2D waterCollider; 
-    Collider2D foodCollider; 
-
-    //-----------------------------------------
-    // Interactable objects' transform class members
+    // Object transform class members
     //-----------------------------------------
     Transform funTransform; 
     Transform waterTransform; 
     Transform foodTransform;
+
+    //-----------------------------------------
+    // Object position class members
+    //-----------------------------------------
+    private Vector2 waterPosition;
+    private Vector2 foodPosition;
+    private Vector2 funPosition;
 
     //-----------------------------------------
     // Simulation parameters
@@ -129,13 +125,6 @@ public class CatAgent : Agent
         foodSource = GameObject.FindWithTag("Food Source");
 
         //-----------------------------------------
-        // Environment colliders
-        //-----------------------------------------
-        waterCollider = waterSource.GetComponent<Collider2D>();
-        foodCollider = foodSource.GetComponent<Collider2D>();
-        funCollider = funSource.GetComponent<Collider2D>();
-
-        //-----------------------------------------
         // Environment transforms
         //-----------------------------------------
         waterTransform = waterSource.GetComponent<Transform>();
@@ -159,6 +148,14 @@ public class CatAgent : Agent
         // Environment logic
         //-----------------------------------------
         environmentManager.RepositionObjects(); // Reposition the interactable objects
+
+        waterPosition = waterTransform.position;
+        foodPosition = foodTransform.position;
+        funPosition = funTransform.position;
+
+        Debug.Log("Water position: " + waterPosition);
+        Debug.Log("Food position: " + foodPosition);
+        Debug.Log("Fun position: " + funPosition);
     }
 
     //-----------------------------------------
@@ -426,12 +423,18 @@ public class CatAgent : Agent
         agentFun = Random.Range(minValue, maxValue);
     }
 
+    //-----------------------------------------
+    // HELPER FUNCTION: Degenerate a given need
+    //-----------------------------------------
     public void DegenerateNeed(ref int need, StatusBar statusBar)
     {
         need--;
         statusBar.SetValue(need);
     }
 
+    //-----------------------------------------
+    // HELPER FUNCTION: Regenerate a given need
+    //-----------------------------------------
     public void RegenerateNeed(ref int need, StatusBar statusBar)
     {
         need += regenRate;
@@ -447,60 +450,29 @@ public class CatAgent : Agent
     }
 
     //-----------------------------------------
-    // HELPER FUNCTIONS: Agent interaction with objects
+    // HELPER FUNCTION: Agent interaction with objects
     //-----------------------------------------
     // Check if the agent is using an object
     private void IsAgentUsingObject()
     {
-        if (insideTrigger)
+        Vector2 agentPosition = transform.position;
+
+        if (agentPosition == waterPosition)
         {
-            switch(currentTriggerTag)
-            {
-                case "Water Source":
-                    RegenerateNeed(ref agentThirst, thirstBar);
-                    AddReward(0.1f);
-                    break;
-                case "Food Source":
-                    RegenerateNeed(ref agentHunger, hungerBar);
-                    AddReward(0.1f);
-                    break;
-                case "Fun Source":
-                    RegenerateNeed(ref agentFun, funBar);
-                    AddReward(0.1f);
-                    break;
-                default:
-                    break;
-            }
+            RegenerateNeed(ref agentThirst, thirstBar);
+            AddReward(0.1f);
+        }
+        else if (agentPosition == foodPosition)
+        {
+            RegenerateNeed(ref agentHunger, hungerBar);
+            AddReward(0.1f);
+        }
+        else if (agentPosition == funPosition)
+        {
+            RegenerateNeed(ref agentFun, funBar);
+            AddReward(0.1f);
         }
     }
-    // Check if the agent is within the bounds of an interactable object
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        insideTrigger = true;
-
-        currentTriggerTag = other.tag;
-    }
-    // Reset the trigger and trigger tag when the agent exits the trigger
-    void OnTriggerExit2D(Collider2D other)
-    {
-        insideTrigger = false;
-        currentTriggerTag = null;
-    }
-
-    //-----------------------------------------
-    // Heuristic function for manual control
-    //-----------------------------------------
-    /*public override void Heuristic(in ActionBuffers actionsOut)
-    {
-        var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Horizontal");
-        continuousActionsOut[1] = Input.GetAxis("Vertical");
-
-        if (Input.GetKey(KeyCode.Space))
-        {
-            EndEpisode();
-        }
-    }*/
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {

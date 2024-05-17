@@ -8,7 +8,7 @@ public class EnvironmentManager : MonoBehaviour
     public bool staticEnvironment = true; // If true, objects will be spawned once. If false, objects will be repositioned every time the function is called
     public float minDistanceBetweenObjects = 8f; // Minimum distance between objects
     public int borderSize = 1; // Border size around the tilemap where objects will not be spawned
-    
+
     public Transform objectParent; // objectParent object to hold all the spawned objects
     public GameObject[] prefabsToSpawn; // Array of object prefabs to spawn (cat tower, bowl, food)
 
@@ -33,10 +33,10 @@ public class EnvironmentManager : MonoBehaviour
             
             while(!validSpawn)
             {
-                float randomX = Random.Range(minWorldPos.x, maxWorldPos.x);
-                float randomY = Random.Range(minWorldPos.y, maxWorldPos.y);
+                float randomX = Mathf.Round(Random.Range(minWorldPos.x, maxWorldPos.x));
+                float randomY = Mathf.Round(Random.Range(minWorldPos.y, maxWorldPos.y));
 
-                spawnPosition = new Vector3(randomX, randomY, 0);
+                spawnPosition = new Vector3(randomX, randomY, -0.5f);
 
                 validSpawn = IsPositionValid(spawnPosition, minDistanceBetweenObjects, spawnPositions); 
             }
@@ -44,6 +44,8 @@ public class EnvironmentManager : MonoBehaviour
             spawnPositions.Add(spawnPosition);
 
             GameObject newObject = Instantiate(prefab, spawnPosition, Quaternion.identity, objectParent);
+
+            //Debug.Log("Spawned object at: " + spawnPosition);
             
         }
         
@@ -71,10 +73,10 @@ public class EnvironmentManager : MonoBehaviour
                         Vector3 minWorldPos = tilemap.CellToWorld(tilemap.cellBounds.min) + new Vector3(borderSize, borderSize, 0);
                         Vector3 maxWorldPos = tilemap.CellToWorld(tilemap.cellBounds.max) - new Vector3(borderSize, borderSize, 0);
 
-                        float randomX = Random.Range(minWorldPos.x, maxWorldPos.x);
-                        float randomY = Random.Range(minWorldPos.y, maxWorldPos.y);
+                        float randomX = Mathf.Round(Random.Range(minWorldPos.x, maxWorldPos.x));
+                        float randomY = Mathf.Round(Random.Range(minWorldPos.y, maxWorldPos.y));
 
-                        spawnPosition = new Vector3(randomX, randomY, 0);
+                        spawnPosition = new Vector3(randomX, randomY, -0.5f);
 
                         validSpawn = IsPositionValid(spawnPosition, minDistanceBetweenObjects, spawnPositions); 
                     }
