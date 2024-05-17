@@ -18,77 +18,61 @@ public class EnvironmentManager : MonoBehaviour
     public void SpawnObjects()
     {
         List<Vector3> spawnPositions = new List<Vector3>();
-
-        // Get the size of the tile grid in tile units
-        Vector3Int gridSize = tilemap.cellBounds.size;
-
-        // Convert tile corrdinates to world coordinates
-        Vector3 minWorldPos = tilemap.CellToWorld(tilemap.cellBounds.min) + new Vector3(borderSize, borderSize, 0);
-        Vector3 maxWorldPos = tilemap.CellToWorld(tilemap.cellBounds.max) - new Vector3(borderSize, borderSize, 0);
+        Vector3 minWorldPos, maxWorldPos;
+        GetWorldBounds(out minWorldPos, out maxWorldPos);
 
         foreach(GameObject prefab in prefabsToSpawn)
         {
-            bool validSpawn = false;
-            Vector3 spawnPosition = Vector3.zero; 
-            
-            while(!validSpawn)
-            {
-                float randomX = Mathf.Round(Random.Range(minWorldPos.x, maxWorldPos.x));
-                float randomY = Mathf.Round(Random.Range(minWorldPos.y, maxWorldPos.y));
-
-                spawnPosition = new Vector3(randomX, randomY, -0.5f);
-
-                validSpawn = IsPositionValid(spawnPosition, minDistanceBetweenObjects, spawnPositions); 
-            }
-
+            Vector3 spawnPosition = FindValidSpawnPosition(minWorldPos, maxWorldPos, spawnPositions);
             spawnPositions.Add(spawnPosition);
-
-            GameObject newObject = Instantiate(prefab, spawnPosition, Quaternion.identity, objectParent);
-
-            //Debug.Log("Spawned object at: " + spawnPosition);
-            
+            GameObject newObject = Instantiate(prefab, spawnPosition, Quaternion.identity, objectParent);            
         }
         
     }
 
     public Vector3 RepositionObjects()
     {
-        List<Vector3> spawnPositions = new List<Vector3>();
-
-        if (staticEnvironment == false)
+        if (staticEnvironment == false && objectParent.childCount > 0)
         {
-            if (objectParent.childCount > 0)
+            List<Vector3> spawnPositions = new List<Vector3>();
+            Vector3 minWorldPos, maxWorldPos;
+            GetWorldBounds(out minWorldPos, out maxWorldPos);
+
+            foreach (Transform child in objectParent)
             {
-                foreach (Transform child in objectParent)
-                {
-                    bool validSpawn = false;
-                    Vector3 spawnPosition = Vector3.zero;
-                
-                    while(!validSpawn)
-                    {
-                        // Get the size of the tile grid in tile units
-                        Vector3Int gridSize = tilemap.cellBounds.size;
-
-                        // Convert tile corrdinates to world coordinates
-                        Vector3 minWorldPos = tilemap.CellToWorld(tilemap.cellBounds.min) + new Vector3(borderSize, borderSize, 0);
-                        Vector3 maxWorldPos = tilemap.CellToWorld(tilemap.cellBounds.max) - new Vector3(borderSize, borderSize, 0);
-
-                        float randomX = Mathf.Round(Random.Range(minWorldPos.x, maxWorldPos.x));
-                        float randomY = Mathf.Round(Random.Range(minWorldPos.y, maxWorldPos.y));
-
-                        spawnPosition = new Vector3(randomX, randomY, -0.5f);
-
-                        validSpawn = IsPositionValid(spawnPosition, minDistanceBetweenObjects, spawnPositions); 
-                    }
-
-                    spawnPositions.Add(spawnPosition);
-                    child.position = spawnPosition;
-                }
+                Vector3 spawnPosition = FindValidSpawnPosition(minWorldPos, maxWorldPos, spawnPositions);
+                spawnPositions.Add(spawnPosition);
+                child.position = spawnPosition;
             }
+            return spawnPositions[0];
         }
         
         // Return a default value if there are no children
         return Vector3.zero;
+    }
+
+    void GetWorldBounds(out Vector3 minWorldPos, out Vector3 maxWorldPos)
+    {
+        minWorldPos = tilemap.CellToWorld(tilemap.cellBounds.min) + new Vector3(borderSize, borderSize, 0);
+        maxWorldPos = tilemap.CellToWorld(tilemap.cellBounds.max) - new Vector3(borderSize, borderSize, 0);
+    }
+
+    Vector3 FindValidSpawnPosition(Vector3 minWorldPos, Vector3 maxWorldPos, List<Vector3> spawnPositions)
+    {
+        bool validSpawn = false;
+        Vector3 spawnPosition = Vector3.zero;
+
+        while(!validSpawn)
+        {
+            float randomX = Mathf.Round(Random.Range(minWorldPos.x, maxWorldPos.x));
+            float randomY = Mathf.Round(Random.Range(minWorldPos.y, maxWorldPos.y));
+
+            spawnPosition = new Vector3(randomX, randomY, -0.5f);
+
+            validSpawn = IsPositionValid(spawnPosition, minDistanceBetweenObjects, spawnPositions); 
+        }
+
+        return spawnPosition;
     }
 
     bool IsPositionValid(Vector3 position, float minDistance, List<Vector3> positions)
