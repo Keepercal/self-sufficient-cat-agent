@@ -3,9 +3,7 @@
 
 // Then navigate to the /Users/Callum/DevTools/Git Clones/ml-agents directory and run the command below
 
-// mlagents-learn config/cat_config.yaml --run-id=CatAgent --force
-
-// NOTE: The ML-Agents github repo is a dependancy and instructions will be needed for markers to run the simulation themselves
+// mlagents-learn config/dsp_config.yaml --run-id=RunTest --force
 
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +22,7 @@ public class CatAgent : Agent
     // Environment class members
     //-----------------------------------------
 
-    public Vector2 gridSize = new Vector2(1, 1); // The size of each grid cell in the environment
+    private Vector2 gridSize = new Vector2(1, 1); // The size of each grid cell in the environment
     private Vector3 targetedPosition; // The target position for the agent to move to
 
     // Reference to the environment manager
@@ -50,20 +48,13 @@ public class CatAgent : Agent
     // Agent needs class members
     //-----------------------------------------
     // Default need value
-    private static int defaultValue = 500;
+    private const int maxNeed = 500;
+    private const int minNeed = 0;
+    
+    private const int needDecayRate = 1;
+    private const int needRegenRate = 5; // The rate at which the agent's needs regenerate
+    private const int needThreshold = maxNeed / 2;
 
-    private static int maxValue = defaultValue;
-    private static int minValue = defaultValue / 2;
-
-    private static float highValue = defaultValue / 1.5f;
-    private static float midValue = defaultValue / 2f;
-    private static float lowValue = defaultValue / 4f;
-    private static float criticalValue = defaultValue / 8f;
-
-    private static float highValueNormalised = highValue / defaultValue;
-    private static float midValueNormalised = midValue / defaultValue;
-    private static float lowValueNormalised = lowValue / defaultValue;
-    private static float criticalValueNormalised = criticalValue / defaultValue;
 
     public int agentHealth;
     public int agentFun;
@@ -95,15 +86,17 @@ public class CatAgent : Agent
     // Simulation parameters
     //-----------------------------------------
     private float moveSpeed = 150f; // The force multiplier for the agent's movement
-    private int regenRate = 5; // The rate at which the agent's needs regenerate
 
     private Vector2 targetPosition; // The target position for the agent to move to
     private Vector2 previousAgentPosition; // The agent's previous position
 
+    private Vector3 minWorldBound;
+    private Vector3 maxWorldBound;
+
     //-----------------------------------------
     // METHOD: Called when the simulation is initialised
     //-----------------------------------------
-    void Start()
+    public override void Initialize()
     {
         //-----------------------------------------
         // Environment initialisation
@@ -130,6 +123,10 @@ public class CatAgent : Agent
         waterTransform = waterSource.GetComponent<Transform>();
         foodTransform = foodSource.GetComponent<Transform>();
         funTransform = funSource.GetComponent<Transform>();
+
+        var cellBounds = environmentManager.tilemap.cellBounds;
+        minWorldBound = environmentManager.tilemap.CellToWorld(cellBounds.min) + new Vector3(1, 1, 0);
+        maxWorldBound = environmentManager.tilemap.CellToWorld(cellBounds.max) - new Vector3(1, 1, 0);
     }
 
     //-----------------------------------------
@@ -152,10 +149,6 @@ public class CatAgent : Agent
         waterPosition = waterTransform.position;
         foodPosition = foodTransform.position;
         funPosition = funTransform.position;
-
-        Debug.Log("Water position: " + waterPosition);
-        Debug.Log("Food position: " + foodPosition);
-        Debug.Log("Fun position: " + funPosition);
     }
 
     //-----------------------------------------
@@ -166,15 +159,20 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Observations about the agent's state
         //-----------------------------------------
-        sensor.AddObservation(this.transform.position); // Po sition
+        sensor.AddObservation(this.transform.position); // Position
+
+        sensor.AddObservation(minWorldBound.x);
+        sensor.AddObservation(minWorldBound.y);
+        sensor.AddObservation(maxWorldBound.x);
+        sensor.AddObservation(maxWorldBound.y);
 
         //-----------------------------------------
         // Observations about the agent's needs, normalised to range of -1,1
         //-----------------------------------------
-        sensor.AddObservation(agentHealth / 1000f);
-        sensor.AddObservation(agentThirst / 1000f); 
-        sensor.AddObservation(agentHunger / 1000f);
-        sensor.AddObservation(agentFun / 1000f); 
+        sensor.AddObservation(agentHealth / maxNeed);
+        sensor.AddObservation(agentThirst / maxNeed); 
+        sensor.AddObservation(agentHunger / maxNeed);
+        sensor.AddObservation(agentFun / maxNeed); 
 
         //-----------------------------------------
         // Observations about the environment
@@ -183,9 +181,9 @@ public class CatAgent : Agent
         sensor.AddObservation(foodTransform.position);
         sensor.AddObservation(funTransform.position); 
 
-        sensor.AddObservation(Vector2.Distance(transform.position, waterTransform.position));
-        sensor.AddObservation(Vector2.Distance(transform.position, foodTransform.position));
-        sensor.AddObservation(Vector2.Distance(transform.position, funTransform.position));
+        sensor.AddObservation(Vector2.Distance(transform.position, waterTransform.localPosition));
+        sensor.AddObservation(Vector2.Distance(transform.position, foodTransform.localPosition));
+        sensor.AddObservation(Vector2.Distance(transform.position, funTransform.localPosition));
     }
 
     //-----------------------------------------
@@ -195,14 +193,23 @@ public class CatAgent : Agent
     {   
         rBody.velocity = Vector2.zero; // Reset the agent's velocity
 
+        if (environmentManager.IsOutsideTilemapBounds(transform.position))
+        {
+            AddReward(-1f);
+            EndEpisode();
+            return;
+        }
+
+        AddReward(-1f);
+
         //-----------------------------------------
         // Logic for the agent's needs
         //-----------------------------------------
         // Clamp the agent's needs between 0 and the default value
-        agentHealth = Mathf.Clamp(agentHealth, 0, defaultValue);
-        agentThirst = Mathf.Clamp(agentThirst, 0, defaultValue);
-        agentHunger = Mathf.Clamp(agentHunger, 0, defaultValue);
-        agentFun = Mathf.Clamp(agentFun, 0, defaultValue);
+        agentHealth = Mathf.Clamp(agentHealth, minNeed, maxNeed);
+        agentThirst = Mathf.Clamp(agentThirst, minNeed, maxNeed);
+        agentHunger = Mathf.Clamp(agentHunger, minNeed, maxNeed);
+        agentFun = Mathf.Clamp(agentFun, minNeed, maxNeed);
 
         // Decrement the agent's needs over time
         DegenerateNeed(ref agentThirst, thirstBar);
@@ -220,6 +227,7 @@ public class CatAgent : Agent
         // Discrete actions
         //-----------------------------------------
         int movement = actionBuffers.DiscreteActions[0];
+        //int interact = actionBuffers.DiscreteActions[1];
 
         if(!isMoving)
         {
@@ -249,137 +257,37 @@ public class CatAgent : Agent
             }
         }
 
-        //-----------------------------------------
-        // Reward or punish the agent based on it's distance to the action target 
-        //-----------------------------------------
-        float guideReward = 0;
-        
-        guideReward += GuideAgent(transform.position, waterTransform.position, previousAgentPosition);
-        guideReward += GuideAgent(transform.position, foodTransform.position, previousAgentPosition);
-        guideReward += GuideAgent(transform.position, funTransform.position, previousAgentPosition);
-
-        AddReward(guideReward);
-
-        //-----------------------------------------
-        // Calculate the reward for the agent in the current step
-        //-----------------------------------------
-        float stepReward = CalculateStepReward();
-        AddReward(stepReward);
-
-        //-----------------------------------------
-        // Set the agent's current position as the previous position before the next step
-        //-----------------------------------------
-        previousAgentPosition = transform.position;
-    }
-
-    //-----------------------------------------
-    // Calulcate the reward for each step
-    // NOTE: The agent's needs are normalised to the range of -1,1
-    //-----------------------------------------
-    private float CalculateStepReward()
-    {
-        float totalReward = 0f;
-
-        //-----------------------------------------
-        // Normalise the agent's needs
-        //-----------------------------------------
-        float normalisedHealth = Normalise(ref agentHealth);
-        float normalisedThirst = Normalise(ref agentThirst);
-        float normalisedHunger = Normalise(ref agentHunger);
-        float normalisedFun = Normalise(ref agentFun);
-
-        float minNeed = Mathf.Min(normalisedThirst, normalisedHunger, normalisedFun);
-
-        //-----------------------------------------
-        // Health rewards
-        //-----------------------------------------
-        totalReward += HealthReward(normalisedHealth);
-
-        //-----------------------------------------
-        // Needs rewards
-        //-----------------------------------------
-        totalReward += NeedsReward(minNeed);
-
-        return totalReward;
-    }
-
-    //-----------------------------------------
-    // Reward the agent based on its distance to the target
-    //-----------------------------------------
-    private float GuideAgent(Vector2 currentAgentPosition, Vector2 targetPosition, Vector2 previousAgentPosition)
-    {
-        float currentDistanceToTarget = Vector2.Distance(currentAgentPosition, targetPosition);
-        float previousDistanceToTarget = Vector2.Distance(previousAgentPosition, targetPosition);
-
-        float distanceChange = previousDistanceToTarget - currentDistanceToTarget;
-
-        if (currentDistanceToTarget < previousDistanceToTarget)
+        if (agentHunger < needThreshold)
         {
-            return 0.2f;
-        }
-        else
-        {
-            return -0.1f;
-        }
-    }
-
-    //-----------------------------------------
-    // HELPER FUNCTIONS: Calculate the rewards
-    // NOTE: Parameters are normalised
-    //-----------------------------------------
-
-    private float NeedsReward(float minNeed)
-    {
-        float reward = 0f;
-        // Reward the agent for its minimum need begin high
-        if (minNeed >= midValueNormalised)
-        {
-            reward += 0.1f;
-        }
-        // Punish the agent if any need is critically low
-        else if (minNeed <= criticalValueNormalised)
-        {
-            reward += -0.2f;
+            float distanceToFood = Vector2.Distance(transform.position, foodTransform.position);
+            AddReward(-distanceToFood * 0.01f);
         }
 
-        return reward;
-    }
-
-    private float HealthReward(float health)
-    {
-        float reward = 0f;
-        // Punish the agent for having low health
-        if (agentThirst <= 0 || agentHunger <= 0 || agentFun <= 0)
+        if (agentThirst < needThreshold)
         {
-            if (agentHealth > 0) 
-            {
-                AddReward(-0.2f);
-            }
+            float distanceToWater = Vector2.Distance(transform.position, waterTransform.position);
+            AddReward(-distanceToWater * 0.01f);
         }
-        // Reward the agent for having full health
-        if (health >= maxValue) 
+
+        if (agentFun < needThreshold)
         {
-            reward += 0.1f;
+            float distanceToFun = Vector2.Distance(transform.position, funTransform.position);
+            AddReward(-distanceToFun * 0.01f);
         }
-        // Punish the agent if health is critically low
-        if (health <= criticalValueNormalised)
-        {
-            reward += -0.2f;
-        }
-        
-        return reward;
-    }
 
-    private float DecisionReward(float need)
-    {
-        float reward = 0f;
-
-        if (need <= criticalValueNormalised)
-            reward += 0.1f;
-        else
-            reward += -0.2f;
-
-        return reward;
+        // switch(interact)
+        // {
+        //     case 0:
+        //         if (IsAgentOnObject() == true)
+        //         {
+        //             AgentOnObject();
+        //             break;
+        //         }
+        //         else {
+        //             AddReward(-1f);
+        //             break;
+        //         }
+        // }
     }
 
     //-----------------------------------------
@@ -388,7 +296,7 @@ public class CatAgent : Agent
     private void AgentHealthCheck()
     {
         // If all needs are above the threshold, increase the agent's health
-        if (agentThirst >= midValue && agentHunger >= midValue && agentFun >= midValue)
+        if (agentThirst >= needThreshold && agentHunger >= needThreshold && agentFun >= needThreshold)
         {
             RegenerateNeed(ref agentHealth, healthBar);
         }
@@ -417,10 +325,10 @@ public class CatAgent : Agent
     //-----------------------------------------
     private void ResetNeeds()
     {
-        agentHealth = defaultValue;
-        agentThirst = Random.Range(minValue, maxValue);
-        agentHunger = Random.Range(minValue, maxValue);
-        agentFun = Random.Range(minValue, maxValue);
+        agentHealth = maxNeed;
+        agentThirst = Random.Range(maxNeed / 2, maxNeed);
+        agentHunger = Random.Range(maxNeed / 2, maxNeed);
+        agentFun = Random.Range(maxNeed / 2, maxNeed);
     }
 
     //-----------------------------------------
@@ -437,40 +345,52 @@ public class CatAgent : Agent
     //-----------------------------------------
     public void RegenerateNeed(ref int need, StatusBar statusBar)
     {
-        need += regenRate;
+        need += needRegenRate;
         statusBar.SetValue(need);
-    }
-
-    //-----------------------------------------
-    // HELPER FUNCTION: Normalise the agent's needs to the range of -1,1
-    //-----------------------------------------
-    private float Normalise(ref int value)
-    {
-        return value / defaultValue;
     }
 
     //-----------------------------------------
     // HELPER FUNCTION: Agent interaction with objects
     //-----------------------------------------
+    // private bool IsAgentOnObject()
+    // {
+    //     Vector2 agentPosition = funTransform.position;
+
+    //     if (agentPosition == waterPosition || agentPosition == foodPosition || agentPosition == funPosition)
+    //     {
+    //         return true;
+    //     }
+    //     else
+    //     {
+    //         return false;
+    //     }
+    // }
+
     // Check if the agent is using an object
-    private void IsAgentUsingObject()
+    private bool IsAgentUsingObject()
     {
         Vector2 agentPosition = transform.position;
 
         if (agentPosition == waterPosition)
         {
             RegenerateNeed(ref agentThirst, thirstBar);
-            AddReward(0.1f);
+            AddReward(1f);
+            return true;
         }
         else if (agentPosition == foodPosition)
         {
             RegenerateNeed(ref agentHunger, hungerBar);
-            AddReward(0.1f);
+            AddReward(1f);
+            return true;
         }
         else if (agentPosition == funPosition)
         {
             RegenerateNeed(ref agentFun, funBar);
-            AddReward(0.1f);
+            AddReward(1f);
+            return true;
+        }
+        else{
+            return false;
         }
     }
 
