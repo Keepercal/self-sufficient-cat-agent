@@ -8,15 +8,15 @@ public class StatusBar : MonoBehaviour
     public Slider statusBar;
     public Image statusBarFill;
 
-    private int previousValue;
+    private float previousValue;
 
-    public void SetMaxValue(int statusValue)
+    public void SetMaxValue(float statusValue)
     {
         statusBar.maxValue = statusValue;
         statusBar.value = statusValue;
     }
 
-    public void SetValue(int statusValue)
+    public void SetValue(float statusValue)
     {
         // Change the colour of the fill if the value is increasing
         if (statusValue > previousValue)

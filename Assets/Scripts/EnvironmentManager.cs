@@ -32,9 +32,9 @@ public class EnvironmentManager : MonoBehaviour
 
         if (staticEnvironment == true)
         {
-            GameObject newObject1 = Instantiate(prefabsToSpawn[0], new Vector2(-6, 4), Quaternion.identity, objectParent);
-            GameObject newObject2 = Instantiate(prefabsToSpawn[1], new Vector2(-6, -4), Quaternion.identity, objectParent);
-            GameObject newObject3 = Instantiate(prefabsToSpawn[2], new Vector2(8, 4), Quaternion.identity, objectParent);
+            GameObject newObject1 = Instantiate(prefabsToSpawn[0], new Vector2(-6, 3), Quaternion.identity, objectParent);
+            GameObject newObject2 = Instantiate(prefabsToSpawn[1], new Vector2(-6, -3), Quaternion.identity, objectParent);
+            GameObject newObject3 = Instantiate(prefabsToSpawn[2], new Vector2(8, 3), Quaternion.identity, objectParent);
         }
         
         else{
@@ -153,7 +153,8 @@ public class EnvironmentManager : MonoBehaviour
 
         BoundsInt tilemapBounds = tilemap.cellBounds;
 
-        if (cellPosition.x < tilemapBounds.min.x || cellPosition.x > tilemapBounds.max.x || cellPosition.y < tilemapBounds.min.y || cellPosition.y > tilemapBounds.max.y)
+        if (cellPosition.x < tilemapBounds.min.x || cellPosition.x > tilemapBounds.max.x ||
+        cellPosition.y < tilemapBounds.min.y || cellPosition.y > tilemapBounds.max.y)
         {
             return true;
         }
@@ -164,5 +165,17 @@ public class EnvironmentManager : MonoBehaviour
         }
 
         return false;
+    }
+    
+    public void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Vector3 minWorldPos, maxWorldPos;
+        GetWorldBounds(out minWorldPos, out maxWorldPos);
+        
+        Gizmos.DrawLine(minWorldPos, new Vector3(minWorldPos.x, maxWorldPos.y, 0));
+        Gizmos.DrawLine(minWorldPos, new Vector3(maxWorldPos.x, minWorldPos.y, 0));
+        Gizmos.DrawLine(maxWorldPos, new Vector3(minWorldPos.x, maxWorldPos.y, 0));
+        Gizmos.DrawLine(maxWorldPos, new Vector3(maxWorldPos.x, minWorldPos.y, 0));
     }
 }

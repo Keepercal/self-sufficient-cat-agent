@@ -239,7 +239,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -362,7 +362,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -3566,7 +3566,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -3696,11 +3696,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.VectorObservationSize
-      value: 19
+      value: 23
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.VectorActionSize.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.NumStackedVectorObservations
@@ -3708,7 +3708,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.VectorActionSize.Array.data[0]
-      value: 5
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.VectorActionSize.Array.data[1]
@@ -3716,7 +3716,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.m_NumContinuousActions
@@ -3724,11 +3724,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.data[0]
-      value: 5
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 7111721594159302356, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: m_BrainParameters.m_ActionSpec.BranchSizes.Array.data[1]
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7980131409818277273, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
+      propertyPath: DecisionPeriod
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 7980131409818277273, guid: 0f6a338b8909b4945ac99309310b8b55, type: 3}
       propertyPath: TakeActionsBetweenDecisions
@@ -4282,7 +4286,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
