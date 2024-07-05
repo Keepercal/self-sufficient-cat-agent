@@ -2,7 +2,7 @@
 
 This project is dedicated to Wilbur, forever a friend to those of Ralph Road and a good boy.
 
-<img src="AdditionalFiles/Images/wilbur.jpeg" alt="Wilbur basking in the sunlight." width="100" height="100"/>
+<img src="AdditionalFiles/Images/wilbur.jpeg" alt="Wilbur basking in the sunlight." height="100"/>
 
 Consequently, to install and use the ML-Agents Toolkit you will need to:
 
