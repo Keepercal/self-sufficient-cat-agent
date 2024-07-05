@@ -1,3 +1,5 @@
+# Cat Sim: Nurturing Self-Sustaining Agents Using Reinforcement Learning
+
 This project is dedicated to Wilbur, forever a friend to those of Ralph Road and a good boy.
 
 ![Wilbur basking in the sun light.](AdditionalFiles/Images/wilbur.jpeg)
