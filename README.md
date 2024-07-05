@@ -1,3 +1,7 @@
+This project is dedicated to Wilbur, forever a friend to those of Ralph Road and a good boy.
+
+![Wilbur basking in the sun light.](AdditionalFiles/Images/wilbur.jpeg)
+
 Consequently, to install and use the ML-Agents Toolkit you will need to:
 
 - Install Unity (2023.2 or later)
