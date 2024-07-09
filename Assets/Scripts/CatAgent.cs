@@ -1,11 +1,10 @@
 // Run command for training
-// Note: activate the virtual enviromenmt first using "conda activate mlagents"
 
+// Note: activate the virtual enviromenmt first using "conda activate mlagents"
 // Then navigate to the /Users/Callum/DevTools/Git Clones/ml-agents directory and run the command below
 
-// mlagents-learn config/cat_config.yaml --run-id=CatAgent --force
-
-// NOTE: The ML-Agents github repo is a dependancy and instructions will be needed for markers to run the simulation themselves
+// mlagents-learn config/dsp_config.yaml --run-id=DummyRun --force --time-scale=1
+// tensorboard --logdir results --port 6006
 
 using System.Collections;
 using System.Collections.Generic;
@@ -24,82 +23,90 @@ public class CatAgent : Agent
     // Environment class members
     //-----------------------------------------
 
-    public EnvironmentController environment; // The environment controller
-    
-    Transform trainigAreaTransform;
-    BoxCollider2D trainingAreaCollider;
+    private Vector2 gridSize = new Vector2(1, 1); // The size of each grid cell in the environment
+    private Vector3 targetedPosition; // The target grid position for the agent to move to
 
-    private bool insideTrigger = false;
-    private string currentTriggerTag;
+    // Reference to the environment manager
+    public EnvironmentManager environmentManager;
+
+    // Flags
+    private bool isMoving = false; // Flag to check if the agent is moving
 
     //-----------------------------------------
-    // Agent components class members
+    // Agent component class members
     //-----------------------------------------
 
     Rigidbody2D rBody; // Agent rigidbody
     Collider2D agentCollider; // Agent collider
     Animator animator; // Agent animator
 
+    public StatusBar healthBar; // Agent health bar
+    public StatusBar thirstBar; // Agent thirst bar
+    public StatusBar hungerBar; // Agent hunger bar
+    public StatusBar funBar; // Agent fun bar
+
     //-----------------------------------------
     // Agent needs class members
     //-----------------------------------------
     // Default need value
-    private static int defaultValue = 500;
+    private const int maxNeed = 500;
+    private const int minNeed = 0;
+    
+    private const int needDecayRate = 1; // The rate at which the agent's needs decay
+    private const int needRegenRate = 5; // The rate at which the agent's needs regenerate
 
-    private static int maxValue = defaultValue;
-    private static int minValue = defaultValue / 2;
+    private const int needThreshold = maxNeed / 2; 
+    private const int criticalNeedThreshold = maxNeed / 4;
 
-    private static float highValue = defaultValue / 1.5f;
-    private static float midValue = defaultValue / 2f;
-    private static float lowValue = defaultValue / 4f;
-    private static float criticalValue = defaultValue / 8f;
-
-    private static float highValueNormalised = highValue / defaultValue;
-    private static float midValueNormalised = midValue / defaultValue;
-    private static float lowValueNormalised = lowValue / defaultValue;
-    private static float criticalValueNormalised = criticalValue / defaultValue;
-
-    public int agentHealth;
-    public int agentFun;
-    public int agentHunger;
-    public int agentThirst;
+    public float agentHealth;
+    public float agentFun;
+    public float agentHunger;
+    public float agentThirst;
 
     //-----------------------------------------
-    // Interactable objects' game object class members
+    // Object game object class members
     //-----------------------------------------
     GameObject funSource;
     GameObject waterSource; 
     GameObject foodSource; 
-    //-----------------------------------------
-    // Interactable objects' collider class members
-    //-----------------------------------------
-    Collider2D funCollider; 
-    Collider2D waterCollider; 
-    Collider2D foodCollider; 
 
     //-----------------------------------------
-    // Interactable objects' transform class members
+    // Object transform class members
     //-----------------------------------------
     Transform funTransform; 
     Transform waterTransform; 
     Transform foodTransform;
 
     //-----------------------------------------
+    // Object position class members
+    //-----------------------------------------
+    private Vector2 waterPosition;
+    private Vector2 foodPosition;
+    private Vector2 funPosition;
+
+    //-----------------------------------------
     // Simulation parameters
     //-----------------------------------------
     private float moveSpeed = 150f; // The force multiplier for the agent's movement
-    private int regenRate = 5; // The rate at which the agent's needs regenerate
 
-    public int numDeaths; // The number of deaths the agent has had
+    private Vector2 currentPosition; // The agent's current position
+    private Vector2 previousPosition; // The agent's previous position
 
-    private Vector2 targetPosition; // The target position for the agent to move to
-    private Vector2 previousAgentPosition; // The agent's previous position
+    private Vector3 minWorldBound;
+    private Vector3 maxWorldBound;
+
+    private static int callCount = 0;
 
     //-----------------------------------------
     // METHOD: Called when the simulation is initialised
     //-----------------------------------------
-    void Start()
+    public override void Initialize()
     {
+        //-----------------------------------------
+        // Environment initialisation
+        //-----------------------------------------
+        environmentManager.SpawnObjects();
+
         //-----------------------------------------
         // References to the agent's components
         //-----------------------------------------
@@ -115,22 +122,15 @@ public class CatAgent : Agent
         foodSource = GameObject.FindWithTag("Food Source");
 
         //-----------------------------------------
-        // Environment colliders
-        //-----------------------------------------
-        trainingAreaCollider = environment.trainingArea.GetComponent<BoxCollider2D>();
-
-        funCollider = funSource.GetComponent<Collider2D>();
-        waterCollider = waterSource.GetComponent<Collider2D>();
-        foodCollider = foodSource.GetComponent<Collider2D>();
-
-        //-----------------------------------------
         // Environment transforms
         //-----------------------------------------
-        trainigAreaTransform = environment.trainingArea.GetComponent<Transform>();
-
-        funTransform = funSource.GetComponent<Transform>();
         waterTransform = waterSource.GetComponent<Transform>();
         foodTransform = foodSource.GetComponent<Transform>();
+        funTransform = funSource.GetComponent<Transform>();
+
+        var cellBounds = environmentManager.tilemap.cellBounds;
+        minWorldBound = environmentManager.tilemap.CellToWorld(cellBounds.min) + new Vector3(1, 1, 0);
+        maxWorldBound = environmentManager.tilemap.CellToWorld(cellBounds.max) - new Vector3(1, 1, 0);
     }
 
     //-----------------------------------------
@@ -141,20 +141,18 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Agent logic
         //-----------------------------------------
-        rBody.velocity = Vector2.zero; // Reset the agent's velocity
-        transform.position = environment.RandomisePosition(agentCollider); //Reset the agent's position
+        transform.position = new Vector3(0, 0, -1); //Reset the agent's position to the centre of the training area
         
         ResetNeeds(); // Reset the agent's needs
         
         //-----------------------------------------
         // Environment logic
-        //-----------------------------------------        
-        // Randomise the position of the interactable objects
-        funTransform.position = environment.RandomisePosition(funCollider); 
-        waterTransform.position = environment.RandomisePosition(waterCollider); 
-        foodTransform.position = environment.RandomisePosition(foodCollider); 
+        //-----------------------------------------
+        environmentManager.RepositionObjects(); // Reposition the interactable objects
 
-        //environment.SpawnObstacles(); // Spawn the obstacles
+        waterPosition = waterTransform.position;
+        foodPosition = foodTransform.position;
+        funPosition = funTransform.position;
     }
 
     //-----------------------------------------
@@ -165,17 +163,23 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Observations about the agent's state
         //-----------------------------------------
-        sensor.AddObservation(this.transform.position); // Po sition
-        sensor.AddObservation(rBody.velocity.x); // Upwards velocity
-        sensor.AddObservation(rBody.velocity.y); // Sideways velocity
+        sensor.AddObservation(this.transform.position); // Position
+
+        sensor.AddObservation(minWorldBound);
+        sensor.AddObservation(maxWorldBound);
+
+        sensor.AddObservation(transform.localPosition.x - minWorldBound.x);
+        sensor.AddObservation(transform.localPosition.y - minWorldBound.y);
+        sensor.AddObservation(maxWorldBound.x - transform.localPosition.x);
+        sensor.AddObservation(maxWorldBound.y - transform.localPosition.y);
 
         //-----------------------------------------
         // Observations about the agent's needs, normalised to range of -1,1
         //-----------------------------------------
-        sensor.AddObservation(agentHealth / 1000f);
-        sensor.AddObservation(agentThirst / 1000f); 
-        sensor.AddObservation(agentHunger / 1000f);
-        sensor.AddObservation(agentFun / 1000f); 
+        sensor.AddObservation(agentHealth / maxNeed);
+        sensor.AddObservation(agentThirst / maxNeed); 
+        sensor.AddObservation(agentHunger / maxNeed);
+        sensor.AddObservation(agentFun / maxNeed); 
 
         //-----------------------------------------
         // Observations about the environment
@@ -184,9 +188,9 @@ public class CatAgent : Agent
         sensor.AddObservation(foodTransform.position);
         sensor.AddObservation(funTransform.position); 
 
-        sensor.AddObservation(Vector2.Distance(transform.position, waterTransform.position));
-        sensor.AddObservation(Vector2.Distance(transform.position, foodTransform.position));
-        sensor.AddObservation(Vector2.Distance(transform.position, funTransform.position));
+        sensor.AddObservation(Vector2.Distance(transform.position, waterTransform.localPosition));
+        sensor.AddObservation(Vector2.Distance(transform.position, foodTransform.localPosition));
+        sensor.AddObservation(Vector2.Distance(transform.position, funTransform.localPosition));
     }
 
     //-----------------------------------------
@@ -195,177 +199,223 @@ public class CatAgent : Agent
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {   
         rBody.velocity = Vector2.zero; // Reset the agent's velocity
+        Vector2 currentPosition = transform.position; // The agent's current position
 
-        //-----------------------------------------
-        // Logic for the agent's needs
-        //-----------------------------------------
         // Clamp the agent's needs between 0 and the default value
-        agentHealth = Mathf.Clamp(agentHealth, 0, defaultValue);
-        agentThirst = Mathf.Clamp(agentThirst, 0, defaultValue);
-        agentHunger = Mathf.Clamp(agentHunger, 0, defaultValue);
-        agentFun = Mathf.Clamp(agentFun, 0, defaultValue);
+        agentHealth = Mathf.Clamp(agentHealth, minNeed, maxNeed);
+        agentThirst = Mathf.Clamp(agentThirst, minNeed, maxNeed);
+        agentHunger = Mathf.Clamp(agentHunger, minNeed, maxNeed);
+        agentFun = Mathf.Clamp(agentFun, minNeed, maxNeed);
 
         // Decrement the agent's needs over time
-        agentThirst--;
-        agentHunger--;
-        agentFun--;
+        DegenerateNeed(ref agentThirst, thirstBar);
+        DegenerateNeed(ref agentHunger, hungerBar);
+        DegenerateNeed(ref agentFun, funBar);
 
-        // Check if the agent is using an object
-        // (Actually checks if the agent is within the bounds of an interactable object)
-        IsAgentUsingObject();
+        AddReward(-0.1f); // Small negative reward to encourage efficiency
 
-        // Increase agent's health if every need is above the threshold
-        AgentHealthCheck();
-
-        //-----------------------------------------
-        // Continuous actions
-        //-----------------------------------------
-        Vector2 controlSignal = Vector2.zero;
-
-        controlSignal.x = actionBuffers.ContinuousActions[0]; // (X Axis) Upwards force
-        controlSignal.y = actionBuffers.ContinuousActions[1]; // (Y Axis) Sideways force
-
-        rBody.AddForce(controlSignal * moveSpeed); // Control for agent movement
-
-        //-----------------------------------------
-        // Reward or punish the agent based on it's distance to the action target 
-        //-----------------------------------------
-        float guideReward = GuideAgent(transform.position, waterTransform.position, previousAgentPosition);
-        guideReward += GuideAgent(transform.position, foodTransform.position, previousAgentPosition);
-        guideReward += GuideAgent(transform.position, funTransform.position, previousAgentPosition);
-        AddReward(guideReward);
-
-        //-----------------------------------------
-        // Calculate the reward for the agent in the current step
-        //-----------------------------------------
-        float stepReward = CalculateStepReward();
-        AddReward(stepReward);
-
-        //-----------------------------------------
-        // Set the agent's current position as the previous position before the next step
-        //-----------------------------------------
-        previousAgentPosition = transform.position;
-    }
-
-    //-----------------------------------------
-    // Calulcate the reward for each step
-    // NOTE: The agent's needs are normalised to the range of -1,1
-    //-----------------------------------------
-    private float CalculateStepReward()
-    {
-        float totalReward = 0f;
-
-        //-----------------------------------------
-        // Normalise the agent's needs
-        //-----------------------------------------
-        float normalisedHealth = Normalise(agentHealth);
-        float normalisedThirst = Normalise(agentThirst);
-        float normalisedHunger = Normalise(agentHunger);
-        float normalisedFun = Normalise(agentFun);
-
-        float minNeed = Mathf.Min(normalisedThirst, normalisedHunger, normalisedFun);
-
-        //-----------------------------------------
-        // Health rewards
-        //-----------------------------------------
-        totalReward += HealthReward(normalisedHealth);
-
-        //-----------------------------------------
-        // Needs rewards
-        //-----------------------------------------
-        totalReward += NeedsReward(minNeed);
-
-        return totalReward;
-    }
-
-    //-----------------------------------------
-    // Reward the agent based on its distance to the target
-    //-----------------------------------------
-    private float GuideAgent(Vector2 currentAgentPosition, Vector2 targetPosition, Vector2 previousAgentPosition)
-    {
-        float currentDistanceToTarget = Vector2.Distance(currentAgentPosition, targetPosition);
-        float previousDistanceToTarget = Vector2.Distance(previousAgentPosition, targetPosition);
-
-        float distanceChange = previousDistanceToTarget - currentDistanceToTarget;
-
-        if (currentDistanceToTarget < previousDistanceToTarget)
+        // Check if the agent is outside of the tilemap bounds
+        if (environmentManager.IsOutsideTilemapBounds(transform.position))
         {
-            return 0.2f;
-        }
-        else
-        {
-            return -0.1f;
-        }
-    }
-
-    //-----------------------------------------
-    // HELPER FUNCTIONS: Calculate the rewards
-    // NOTE: Parameters are normalised
-    //-----------------------------------------
-
-    private float NeedsReward(float minNeed)
-    {
-        float reward = 0f;
-        // Reward the agent for its minimum need begin high
-        if (minNeed >= midValueNormalised)
-        {
-            reward += 0.1f;
-        }
-        // Punish the agent if any need is critically low
-        else if (minNeed <= criticalValueNormalised)
-        {
-            reward += -0.2f;
+            AddReward(-5f);
+            Debug.Log("Agent outside of bounds");
+            EndEpisode();
+            return;
         }
 
-        return reward;
-    }
+        // Get the action from the action buffer
+        int movement = actionBuffers.DiscreteActions[0];
 
-    private float HealthReward(float health)
-    {
-        float reward = 0f;
-        // Punish the agent for having low health
-        if (agentThirst <= 0 || agentHunger <= 0 || agentFun <= 0)
+        // Agent movement
+        if(!isMoving)
         {
-            if (agentHealth > 0) 
+            switch(movement)
             {
-                AddReward(-0.2f);
+                case 0: // No movement
+                    break;
+                case 1: // Move up
+                    Move(Vector2.up);
+                    break;
+                case 2: // Move down
+                    Move(Vector2.down);
+                    break;
+                case 3: // Move left
+                    Move(Vector2.left);
+                    break;
+                case 4: // Move right
+                    Move(Vector2.right);
+                    break;
+                case 5: // Move up-left
+                    Move(new Vector2(-1, 1));
+                    break;
+                case 6: // Move up-right
+                    Move(new Vector2(1, 1));
+                    break;
+                case 7: // Move down-left
+                    Move(new Vector2(-1, -1));
+                    break;
+                case 8: // Move down-right
+                    Move(new Vector2(1, -1));
+                    break;
+                default:
+                    break;
             }
         }
-        // Reward the agent for having full health
-        if (health >= maxValue) 
-        {
-            reward += 0.1f;
-        }
-        // Punish the agent if health is critically low
-        if (health <= criticalValueNormalised)
-        {
-            reward += -0.2f;
-        }
-        
-        return reward;
+
+        // Check if the agent is using an object
+        IsAgentUsingObject();
+
+        // Validate the status of the agent's health
+        HealthCheck();
+
+        NeedsCheck();
+
+        previousPosition = currentPosition; // Update the agent's previous position
     }
 
-    private float DecisionReward(float need)
+    //-----------------------------------------
+    // HELPER FUNCTION: Agent interaction with objects
+    //-----------------------------------------
+    private bool IsAgentNearObject(Vector2 agentPosition, Vector2 objectPosition)
     {
-        float reward = 0f;
+        float distance = Vector2.Distance(agentPosition, objectPosition);
+        return distance <= Mathf.Sqrt(2) * gridSize.x;
+    }
 
-        if (need <= criticalValueNormalised)
-            reward += 0.1f;
-        else
-            reward += -0.2f;
+    // Check if the agent is using an object
+    private bool IsAgentUsingObject()
+    {
+        Vector2 currentObjectUsed = new Vector2(0, 0);
+        Vector2 previousObjectUsed = new Vector2(0, 0);
+        Vector2 agentPosition = transform.position;
 
-        return reward;
+        if (IsAgentNearObject(agentPosition, waterPosition))
+        {
+            currentObjectUsed = waterPosition;
+
+            if (currentObjectUsed != previousObjectUsed)
+            {
+                AddReward(1f);
+            }
+
+            RegenerateNeed(ref agentThirst, thirstBar);
+            previousObjectUsed = waterPosition;
+            callCount++;
+            return true;
+        }
+        else if (IsAgentNearObject(agentPosition, foodPosition))
+        {
+            currentObjectUsed = foodPosition;
+
+            if (currentObjectUsed != previousObjectUsed)
+            {
+                AddReward(1f);
+            }
+
+            RegenerateNeed(ref agentHunger, hungerBar);
+            previousObjectUsed = foodPosition;
+            callCount++;
+            return true;
+        }
+        else if (IsAgentNearObject(agentPosition, funPosition))
+        {
+            currentObjectUsed = funPosition;
+
+            if (currentObjectUsed != previousObjectUsed)
+            {
+                AddReward(1f);
+            }
+            
+            RegenerateNeed(ref agentFun, funBar);
+            previousObjectUsed = funPosition;
+            callCount++;
+            return true;
+        }
+        else{
+            callCount = 0;
+            return false;
+        }
+    }
+
+    private void NeedsCheck()
+    {
+        // If all needs are above the threshold (50% of the max need value), reward the agent
+        if (agentThirst >= needThreshold && agentHunger >= needThreshold && agentFun >= needThreshold)
+        {
+            AddReward(1f);
+        }
+
+        if (agentThirst >= needThreshold)
+        {
+            if (agentHunger <= criticalNeedThreshold || agentFun <= criticalNeedThreshold) // Punish for neglecting other needs
+            {
+                AddReward(-0.1f);
+            }
+            else
+            {
+                AddReward(0.1f);
+            }
+        }
+
+        if (agentHunger >= needThreshold)
+        {
+            if (agentThirst <= criticalNeedThreshold || agentFun <= criticalNeedThreshold) // Punish for neglecting other needs
+            {
+                AddReward(-0.1f);
+            }
+            else
+            {
+                AddReward(0.1f);
+            }
+        }
+
+        if (agentFun >= needThreshold)
+        {
+            if (agentThirst <= criticalNeedThreshold || agentHunger <= criticalNeedThreshold) // Punish for neglecting other needs
+            {
+                AddReward(-0.1f);
+            }
+            else
+            {
+                AddReward(0.1f);
+            }
+        }
+
+        if (callCount > 500)
+        {
+            AddReward(-2f); // Penalise the agent for abusing an object
+            Debug.Log(callCount);
+        }
+
+        if (agentHunger < needThreshold)
+        {
+            AddReward(-0.1f);
+            //AdjustRewardForDistance(foodPosition, ref agentHunger);
+        }
+
+        if (agentThirst < needThreshold)
+        {
+            AddReward(-0.1f);
+            //AdjustRewardForDistance(waterPosition, ref agentThirst);
+        }
+
+        if (agentFun < needThreshold)
+        {
+            AddReward(-0.1f);
+            //AdjustRewardForDistance(funPosition, ref agentFun);
+        }
     }
 
     //-----------------------------------------
     // HELPER FUNCTION: Increase the agent's health if all needs are above the threshold
     //-----------------------------------------
-    private void AgentHealthCheck()
+    private void HealthCheck()
     {
         // If all needs are above the threshold, increase the agent's health
-        if (agentThirst >= midValue && agentHunger >= midValue && agentFun >= midValue)
+        if (agentThirst >= needThreshold && agentHunger >= needThreshold && agentFun >= needThreshold)
         {
-            agentHealth += regenRate;
+            RegenerateNeed(ref agentHealth, healthBar);
+            AddReward(0.01f);
         }
 
         // If any need is below the threshold, decrement the agent's health
@@ -373,18 +423,33 @@ public class CatAgent : Agent
         {
             if (agentHealth > 0) // If the agent's health is above 0, decrement it
             {
-                agentHealth--;
+                DegenerateNeed(ref agentHealth, healthBar);
+                AddReward(-0.05f);
             }
             // If the agent's health reaches 0, end the episode
             else
             {   
-                numDeaths++;
                 AddReward(-5f);
                 EndEpisode();
 
-                Debug.Log("Agent died");
+                Debug.Log("Agent died"); 
                 return;
             }
+        }
+    }
+
+    private void AdjustRewardForDistance(Vector2 targetPosition, ref int need)
+    {
+        float distanceToTarget = Vector2.Distance(transform.position, targetPosition);
+        float lastDistanceToTarget = Vector2.Distance(previousPosition, targetPosition);
+
+        if (distanceToTarget < lastDistanceToTarget)
+        {
+            AddReward(0.1f);
+        }
+        else
+        {
+            AddReward(-0.1f);
         }
     }
 
@@ -393,73 +458,85 @@ public class CatAgent : Agent
     //-----------------------------------------
     private void ResetNeeds()
     {
-        agentHealth = Random.Range(minValue, maxValue);
-        agentThirst = Random.Range(minValue, maxValue);
-        agentHunger = Random.Range(minValue, maxValue);
-        agentFun = Random.Range(minValue, maxValue);
+        agentHealth = maxNeed;
+        agentThirst = Random.Range(maxNeed / 2, maxNeed);
+        agentHunger = Random.Range(maxNeed / 2, maxNeed);
+        agentFun = Random.Range(maxNeed / 2, maxNeed);
     }
 
     //-----------------------------------------
-    // HELPER FUNCTION: Normalise the agent's needs to the range of -1,1
+    // HELPER FUNCTION: Degenerate a given need
     //-----------------------------------------
-    private float Normalise(int value)
+    public void DegenerateNeed(ref float need, StatusBar statusBar)
     {
-        return value / defaultValue;
+        need--;
+        statusBar.SetValue(need);
     }
 
     //-----------------------------------------
-    // HELPER FUNCTIONS: Agent interaction with objects
+    // HELPER FUNCTION: Regenerate a given need
     //-----------------------------------------
-    // Check if the agent is using an object
-    private void IsAgentUsingObject()
+    public void RegenerateNeed(ref float need, StatusBar statusBar)
     {
-        if (insideTrigger)
+        need += needRegenRate;
+        statusBar.SetValue(need);
+    }
+
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        if(!isMoving)
         {
-            switch(currentTriggerTag)
+            if (Input.GetKey(KeyCode.UpArrow))
             {
-                case "Water Source":
-                    agentThirst += regenRate;
-                    AddReward(0.1f);
-                    break;
-                case "Food Source":
-                    agentHunger += regenRate;
-                    AddReward(0.1f);
-                    break;
-                case "Fun Source":
-                    agentFun += regenRate;
-                    AddReward(0.1f);
-                    break;
-                default:
-                    break;
+                Move(Vector2.up);
+            }
+            else if (Input.GetKey(KeyCode.DownArrow))
+            {
+                Move(Vector2.down);
+            }
+            else if (Input.GetKey(KeyCode.LeftArrow))
+            {
+                Move(Vector2.left);
+            }
+            else if (Input.GetKey(KeyCode.RightArrow))
+            {
+                Move(Vector2.right);
+            }
+            else if (Input.GetKey(KeyCode.Space))
+            {
+                EndEpisode();
             }
         }
     }
-    // Check if the agent is within the bounds of an interactable object
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        insideTrigger = true;
 
-        currentTriggerTag = other.tag;
-    }
-    // Reset the trigger and trigger tag when the agent exits the trigger
-    void OnTriggerExit2D(Collider2D other)
+    void Move(Vector2 direction)
     {
-        insideTrigger = false;
-        currentTriggerTag = null;
-    }
+        Vector3 start = transform.position;
+        Vector3 end = start + new Vector3(direction.x * gridSize.x, direction.y * gridSize.y, 0);
 
-    //-----------------------------------------
-    // Heuristic function for manual control
-    //-----------------------------------------
-    public override void Heuristic(in ActionBuffers actionsOut)
-    {
-        var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Horizontal");
-        continuousActionsOut[1] = Input.GetAxis("Vertical");
-
-        if (Input.GetKey(KeyCode.Space))
+        if (IsWithinBounds(end))
         {
-            EndEpisode();
+            targetedPosition = end;
+            isMoving = true;
         }
     }
+
+    bool IsWithinBounds(Vector3 position)
+    {
+        return true;
+    }
+
+    void FixedUpdate()
+    {
+        if (isMoving)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, targetedPosition, moveSpeed * Time.deltaTime);
+
+            if ((Vector3)transform.position == targetedPosition)
+            {
+                isMoving = false;
+            }
+        }
+    }
+
 }
