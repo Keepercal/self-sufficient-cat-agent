@@ -1,3 +1,11 @@
+# Cat Sim: Nurturing Self-Sustaining Agents Using Reinforcement Learning
+
+This project is dedicated to Wilbur, forever a friend to those of Ralph Road and a good boy.
+
+<p align="center">
+  <img src="AdditionalFiles/Images/wilbur.jpeg" alt="Wilbur basking in the sunlight." height="450" />
+</p>
+
 Consequently, to install and use the ML-Agents Toolkit you will need to:
 
 - Install Unity (2023.2 or later)
