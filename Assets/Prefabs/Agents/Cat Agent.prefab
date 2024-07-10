@@ -208,7 +208,6 @@ GameObject:
   - component: {fileID: 7111721594159302356}
   - component: {fileID: 2573452259588042572}
   - component: {fileID: 7980131409818277273}
-  - component: {fileID: 139248072581671836}
   - component: {fileID: 5418914347282945537}
   m_Layer: 0
   m_Name: Cat Agent
@@ -280,12 +279,15 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  environment: {fileID: 0}
-  agentHappiness: 0
-  agentHealth: 0
-  agentFun: 0
-  agentHunger: 0
-  agentThirst: 0
+  environmentManager: {fileID: 0}
+  healthBar: {fileID: 0}
+  thirstBar: {fileID: 0}
+  hungerBar: {fileID: 0}
+  happinessBar: {fileID: 0}
+  health: 0
+  happiness: 0
+  hunger: 0
+  thirst: 0
 --- !u!114 &7980131409818277273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -300,33 +302,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DecisionPeriod: 5
   TakeActionsBetweenDecisions: 1
---- !u!50 &139248072581671836
-Rigidbody2D:
-  serializedVersion: 4
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8634616824785597992}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0.05
-  m_GravityScale: 0
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 4
 --- !u!114 &5418914347282945537
 MonoBehaviour:
   m_ObjectHideFlags: 0
