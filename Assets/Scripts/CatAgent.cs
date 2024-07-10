@@ -176,9 +176,9 @@ public class CatAgent : Agent
             environmentManager.RepositionObjects(); // Reposition the interactable objects
         }
 
-        thirstPosition = thirstTransform.localPosition;
-        hungerPosition = hungerTransform.localPosition;
-        happinessPosition = happinessTransform.localPosition;
+        thirstPosition = thirstTransform.position;
+        hungerPosition = hungerTransform.position;
+        happinessPosition = happinessTransform.position;
     }
 
     //-----------------------------------------
@@ -193,10 +193,10 @@ public class CatAgent : Agent
         sensor.AddObservation(minWorldBound);
         sensor.AddObservation(maxWorldBound);
 
-        sensor.AddObservation(transform.localPosition.x - minWorldBound.x);
-        sensor.AddObservation(transform.localPosition.y - minWorldBound.y);
-        sensor.AddObservation(maxWorldBound.x - transform.localPosition.x);
-        sensor.AddObservation(maxWorldBound.y - transform.localPosition.y);
+        sensor.AddObservation(transform.position.x - minWorldBound.x);
+        sensor.AddObservation(transform.position.y - minWorldBound.y);
+        sensor.AddObservation(maxWorldBound.x - transform.position.x);
+        sensor.AddObservation(maxWorldBound.y - transform.position.y);
 
         //-----------------------------------------
         // Observations about the agent's needs, normalised to range of -1,1
@@ -211,9 +211,9 @@ public class CatAgent : Agent
         sensor.AddObservation(hungerTransform.position);
         sensor.AddObservation(happinessTransform.position); 
 
-        sensor.AddObservation(Vector2.Distance(transform.position, thirstTransform.localPosition));
-        sensor.AddObservation(Vector2.Distance(transform.position, hungerTransform.localPosition));
-        sensor.AddObservation(Vector2.Distance(transform.position, happinessTransform.localPosition));
+        sensor.AddObservation(Vector2.Distance(transform.position, thirstTransform.position));
+        sensor.AddObservation(Vector2.Distance(transform.position, hungerTransform.position));
+        sensor.AddObservation(Vector2.Distance(transform.position, happinessTransform.position));
     }
 
     //-----------------------------------------
