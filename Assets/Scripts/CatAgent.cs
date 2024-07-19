@@ -3,7 +3,7 @@
 // Note: activate the virtual enviromenmt first using "conda activate mlagents"
 // Then navigate to the /Users/Callum/DevTools/Git Clones/ml-agents directory and run the command below
 
-// mlagents-learn config/dsp_config.yaml --run-id=DummyRun --force --time-scale=1
+// mlagents-learn config/cat_config_ppo.yaml --run-id=DummyRun --force
 // tensorboard --logdir results --port 6006
 
 using System.Collections;
@@ -244,7 +244,7 @@ public class CatAgent : Agent
         // Check if the agent is outside of the tilemap bounds
         if (environmentManager.IsOutsideTilemapBounds(transform.position))
         {
-            AddReward(-5f);
+            AddReward(-1f);
             Debug.Log("Agent outside of bounds");
             EndEpisode();
             return;
@@ -373,7 +373,7 @@ public class CatAgent : Agent
             // If the agent's health reaches 0, end the episode
             else
             {   
-                AddReward(-5f);
+                AddReward(-1f);
                 EndEpisode();
 
                 Debug.Log("Agent died"); 
