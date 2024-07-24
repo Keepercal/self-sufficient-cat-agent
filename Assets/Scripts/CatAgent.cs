@@ -207,18 +207,17 @@ public class CatAgent : Agent
 
         //-----------------------------------------
         // Observations about the environment
-        sensor.AddObservation(thirstTransform.position); 
+        sensor.AddObservation(thirstTransform.position); // Object positions
         sensor.AddObservation(hungerTransform.position);
         sensor.AddObservation(happinessTransform.position); 
 
-        sensor.AddObservation(Vector2.Distance(transform.position, thirstTransform.position));
-        sensor.AddObservation(Vector2.Distance(transform.position, hungerTransform.position));
+        sensor.AddObservation(Vector2.Distance(transform.position, thirstTransform.position)); // Agent distance
+        sensor.AddObservation(Vector2.Distance(transform.position, hungerTransform.position)); // to objects
         sensor.AddObservation(Vector2.Distance(transform.position, happinessTransform.position));
     }
 
     //-----------------------------------------
     // METHOD: Called when the agent takes an action, called every step
-    //-----------------------------------------
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {   
         Vector2 currentPosition = transform.position; // The agent's current position
@@ -229,7 +228,7 @@ public class CatAgent : Agent
         hunger = Mathf.Clamp(hunger, 0, maxNeed);
         happiness = Mathf.Clamp(happiness, 0, maxNeed);
 
-        // Check if the agent's health is above the threshold
+        // Perform checks on agent's health and needs
         HealthCheck();
         NeedsCheck();
 
@@ -299,7 +298,7 @@ public class CatAgent : Agent
             }
         }
 
-        GuideReward(targetedPosition);
+       //GuideReward(targetedPosition);
 
     }
 
