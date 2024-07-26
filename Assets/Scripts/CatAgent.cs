@@ -3,7 +3,7 @@
 // Note: activate the virtual enviromenmt first using "conda activate mlagents"
 // Then navigate to the /Users/Callum/DevTools/Git Clones/ml-agents directory and run the command below
 
-// mlagents-learn config/dsp_config.yaml --run-id=DummyRun --force --time-scale=1
+// mlagents-learn config/cat_config_ppo.yaml --run-id=DummyRun --force
 // tensorboard --logdir results --port 6006
 
 using System.Collections;
@@ -29,7 +29,7 @@ public class CatAgent : Agent
     private const float maxNeed = 500f; // 100% 
     private const float minNeed = 0f; // 0%
     
-    private const float needRegenRate = 5f; // Regeneration rate
+    private const float needRegenRate = 10f; // Regeneration rate
     private const float needDegenRate = 1f; // Degeneration rate
 
     private const float threeQuatersFull = maxNeed / 1.5f; // 75% of the agent's max need
@@ -140,6 +140,7 @@ public class CatAgent : Agent
     {
         //-----------------------------------------
         // Agent setup
+        callCount = 0;
         
         transform.position = new Vector3(0, 0, -1); //Reset the agent's position to the centre of the training area
         
@@ -176,9 +177,9 @@ public class CatAgent : Agent
             environmentManager.RepositionObjects(); // Reposition the interactable objects
         }
 
-        thirstPosition = thirstTransform.localPosition;
-        hungerPosition = hungerTransform.localPosition;
-        happinessPosition = happinessTransform.localPosition;
+        thirstPosition = thirstTransform.position;
+        hungerPosition = hungerTransform.position;
+        happinessPosition = happinessTransform.position;
     }
 
     //-----------------------------------------
@@ -193,10 +194,10 @@ public class CatAgent : Agent
         sensor.AddObservation(minWorldBound);
         sensor.AddObservation(maxWorldBound);
 
-        sensor.AddObservation(transform.localPosition.x - minWorldBound.x);
-        sensor.AddObservation(transform.localPosition.y - minWorldBound.y);
-        sensor.AddObservation(maxWorldBound.x - transform.localPosition.x);
-        sensor.AddObservation(maxWorldBound.y - transform.localPosition.y);
+        sensor.AddObservation(transform.position.x - minWorldBound.x);
+        sensor.AddObservation(transform.position.y - minWorldBound.y);
+        sensor.AddObservation(maxWorldBound.x - transform.position.x);
+        sensor.AddObservation(maxWorldBound.y - transform.position.y);
 
         //-----------------------------------------
         // Observations about the agent's needs, normalised to range of -1,1
@@ -207,18 +208,17 @@ public class CatAgent : Agent
 
         //-----------------------------------------
         // Observations about the environment
-        sensor.AddObservation(thirstTransform.position); 
+        sensor.AddObservation(thirstTransform.position); // Object positions
         sensor.AddObservation(hungerTransform.position);
         sensor.AddObservation(happinessTransform.position); 
 
-        sensor.AddObservation(Vector2.Distance(transform.position, thirstTransform.localPosition));
-        sensor.AddObservation(Vector2.Distance(transform.position, hungerTransform.localPosition));
-        sensor.AddObservation(Vector2.Distance(transform.position, happinessTransform.localPosition));
+        sensor.AddObservation(Vector2.Distance(transform.position, thirstTransform.position)); // Agent distance
+        sensor.AddObservation(Vector2.Distance(transform.position, hungerTransform.position)); // to objects
+        sensor.AddObservation(Vector2.Distance(transform.position, happinessTransform.position));
     }
 
     //-----------------------------------------
     // METHOD: Called when the agent takes an action, called every step
-    //-----------------------------------------
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {   
         Vector2 currentPosition = transform.position; // The agent's current position
@@ -229,7 +229,7 @@ public class CatAgent : Agent
         hunger = Mathf.Clamp(hunger, 0, maxNeed);
         happiness = Mathf.Clamp(happiness, 0, maxNeed);
 
-        // Check if the agent's health is above the threshold
+        // Perform checks on agent's health and needs
         HealthCheck();
         NeedsCheck();
 
@@ -244,7 +244,7 @@ public class CatAgent : Agent
         // Check if the agent is outside of the tilemap bounds
         if (environmentManager.IsOutsideTilemapBounds(transform.position))
         {
-            AddReward(-5f);
+            AddReward(-1f);
             Debug.Log("Agent outside of bounds");
             EndEpisode();
             return;
@@ -299,7 +299,7 @@ public class CatAgent : Agent
             }
         }
 
-        GuideReward(targetedPosition);
+       //GuideReward(targetedPosition);
 
     }
 
@@ -322,16 +322,19 @@ public class CatAgent : Agent
         if (IsAgentNearObject(agentPosition, thirstPosition))
         {
             RegenerateNeed(ref thirst, thirstBar);
+            callCount++;
             return true;
         }
         else if (IsAgentNearObject(agentPosition, hungerPosition))
         {
             RegenerateNeed(ref hunger, hungerBar);
+            callCount++;
             return true;
         }
         else if (IsAgentNearObject(agentPosition, happinessPosition))
         {
             RegenerateNeed(ref happiness, happinessBar);
+            callCount++;
             return true;
         }
 
@@ -373,7 +376,7 @@ public class CatAgent : Agent
             // If the agent's health reaches 0, end the episode
             else
             {   
-                AddReward(-5f);
+                AddReward(-1f);
                 EndEpisode();
 
                 Debug.Log("Agent died"); 
@@ -385,23 +388,23 @@ public class CatAgent : Agent
     private void NeedsCheck()
     {   
         //Rewards
-        if (thirst == maxNeed)
-        {
-            AddReward(0.1f);
+        // if (thirst == maxNeed)
+        // {
+        //     AddReward(0.1f);
 
-        }
+        // }
 
-        if (hunger == maxNeed)
-        {
-            AddReward(0.1f);
-        }
+        // if (hunger == maxNeed)
+        // {
+        //     AddReward(0.1f);
+        // }
 
-        // Punishments
-        if (happiness == maxNeed)
-        {
-            AddReward(0.1f);
+        // // Punishments
+        // if (happiness == maxNeed)
+        // {
+        //     AddReward(0.1f);
 
-        }
+        // }
 
         if (thirst <= quaterFull)
         {
@@ -451,9 +454,9 @@ public class CatAgent : Agent
     private void ResetNeeds()
     {
         health = maxNeed;
-        thirst = Random.Range(maxNeed / 2, maxNeed);
-        hunger = Random.Range(maxNeed / 2, maxNeed);
-        happiness = Random.Range(maxNeed / 2, maxNeed);
+        thirst = Random.Range(maxNeed / 1.5f, maxNeed);
+        hunger = Random.Range(maxNeed / 1.5f, maxNeed);
+        happiness = Random.Range(maxNeed / 1.5f, maxNeed);
     }
 
     //-----------------------------------------
