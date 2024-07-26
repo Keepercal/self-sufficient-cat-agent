@@ -40,7 +40,10 @@ public class CatAgent : Agent
     [Header("Environment")]
     private bool isMoving = false; // Flag to check if the agent is moving
     public bool staticEnvironment = true; // Flag to check if the environment is static
+
+    // Counters
     private int callCount = 0;
+    private int stepCount = 0;
 
     //-----------------------------------------
     // Grid & environment logic
@@ -48,8 +51,8 @@ public class CatAgent : Agent
     private Vector2 cellSize = new Vector2(1, 1); // The size of each grid cell in the environment
     private Vector3 targetedPosition; // The target grid position for the agent to move to
 
-    // Reference to the environment manager
-    public EnvironmentManager environmentManager;
+    public EnvironmentManager environmentManager; // Reference to the environment manager
+    public GameObject ScreenFlash; // Screen flash object
 
     //-----------------------------------------
     // Graphical components
@@ -93,10 +96,7 @@ public class CatAgent : Agent
     Vector2 hungerPosition;
     Vector2 happinessPosition;
 
-    // Agent positions
-    private Vector2 currentPosition; // The agent's current position
-    private Vector2 previousPosition; // The agent's previous position
-
+    // World bounds
     private Vector3 minWorldBound;
     private Vector3 maxWorldBound;
 
@@ -118,6 +118,7 @@ public class CatAgent : Agent
         // Agent component references
 
         animator = GetComponent<Animator>();
+        ScreenFlash.SetActive(false);
 
         //-----------------------------------------
         // Object component references
@@ -141,6 +142,7 @@ public class CatAgent : Agent
         //-----------------------------------------
         // Agent setup
         callCount = 0;
+        stepCount = 0;
         
         transform.position = new Vector3(0, 0, -1); //Reset the agent's position to the centre of the training area
         
@@ -221,6 +223,8 @@ public class CatAgent : Agent
     // METHOD: Called when the agent takes an action, called every step
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {   
+        stepCount++;
+
         Vector2 currentPosition = transform.position; // The agent's current position
 
         // Clamp the agent's needs between 0 and the default value
@@ -239,14 +243,16 @@ public class CatAgent : Agent
         DegenerateNeed(ref hunger, hungerBar);
         DegenerateNeed(ref happiness, happinessBar);
 
-        AddReward(-0.1f); // Small negative reward to encourage efficiency
+        AddReward(-0.01f); // Small negative reward to encourage efficiency
 
         // Check if the agent is outside of the tilemap bounds
         if (environmentManager.IsOutsideTilemapBounds(transform.position))
         {
             AddReward(-1f);
-            Debug.Log("Agent outside of bounds");
             EndEpisode();
+
+            Debug.Log("Agent outside of bounds");
+            StartCoroutine(ShowAndHide(ScreenFlash, 0.1f));
             return;
         }
 
@@ -299,8 +305,12 @@ public class CatAgent : Agent
             }
         }
 
-       //GuideReward(targetedPosition);
-
+        if (stepCount >= 10000)
+        {
+            Debug.Log("Episode complete! Cumulative reward: " + GetCumulativeReward());
+            AddReward(1f);
+            EndEpisode();
+        }
     }
 
     //-----------------------------------------
@@ -379,7 +389,8 @@ public class CatAgent : Agent
                 AddReward(-1f);
                 EndEpisode();
 
-                Debug.Log("Agent died"); 
+                Debug.Log("Agent died");
+                StartCoroutine(ShowAndHide(ScreenFlash, 0.1f));
                 return;
             }
         }
@@ -387,25 +398,6 @@ public class CatAgent : Agent
 
     private void NeedsCheck()
     {   
-        //Rewards
-        // if (thirst == maxNeed)
-        // {
-        //     AddReward(0.1f);
-
-        // }
-
-        // if (hunger == maxNeed)
-        // {
-        //     AddReward(0.1f);
-        // }
-
-        // // Punishments
-        // if (happiness == maxNeed)
-        // {
-        //     AddReward(0.1f);
-
-        // }
-
         if (thirst <= quaterFull)
         {
             AddReward(-0.01f);
@@ -434,17 +426,6 @@ public class CatAgent : Agent
         if (happiness <= 0)
         {
             AddReward(-0.01f);
-        }
-    }
-
-    private void GuideReward(Vector2 targetPosition)
-    {
-        float distanceToTarget = Vector2.Distance(transform.position, targetPosition);
-        float lastDistanceToTarget = Vector2.Distance(previousPosition, targetPosition);
-
-        if (distanceToTarget < lastDistanceToTarget)
-        {
-            AddReward(0.1f);
         }
     }
 
@@ -500,6 +481,7 @@ public class CatAgent : Agent
             else if (Input.GetKey(KeyCode.Space))
             {
                 EndEpisode();
+                StartCoroutine(ShowAndHide(ScreenFlash, 0.1f));
             }
         }
     }
@@ -532,6 +514,13 @@ public class CatAgent : Agent
                 isMoving = false;
             }
         }
+    }
+
+    IEnumerator ShowAndHide(GameObject ScreenFlash, float delay)
+    {
+        ScreenFlash.SetActive(true);
+        yield return new WaitForSeconds(delay);
+        ScreenFlash.SetActive(false);
     }
 
 }
