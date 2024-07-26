@@ -29,7 +29,7 @@ public class CatAgent : Agent
     private const float maxNeed = 500f; // 100% 
     private const float minNeed = 0f; // 0%
     
-    private const float needRegenRate = 5f; // Regeneration rate
+    private const float needRegenRate = 10f; // Regeneration rate
     private const float needDegenRate = 1f; // Degeneration rate
 
     private const float threeQuatersFull = maxNeed / 1.5f; // 75% of the agent's max need
@@ -140,6 +140,7 @@ public class CatAgent : Agent
     {
         //-----------------------------------------
         // Agent setup
+        callCount = 0;
         
         transform.position = new Vector3(0, 0, -1); //Reset the agent's position to the centre of the training area
         
@@ -321,16 +322,19 @@ public class CatAgent : Agent
         if (IsAgentNearObject(agentPosition, thirstPosition))
         {
             RegenerateNeed(ref thirst, thirstBar);
+            callCount++;
             return true;
         }
         else if (IsAgentNearObject(agentPosition, hungerPosition))
         {
             RegenerateNeed(ref hunger, hungerBar);
+            callCount++;
             return true;
         }
         else if (IsAgentNearObject(agentPosition, happinessPosition))
         {
             RegenerateNeed(ref happiness, happinessBar);
+            callCount++;
             return true;
         }
 
@@ -384,23 +388,23 @@ public class CatAgent : Agent
     private void NeedsCheck()
     {   
         //Rewards
-        if (thirst == maxNeed)
-        {
-            AddReward(0.1f);
+        // if (thirst == maxNeed)
+        // {
+        //     AddReward(0.1f);
 
-        }
+        // }
 
-        if (hunger == maxNeed)
-        {
-            AddReward(0.1f);
-        }
+        // if (hunger == maxNeed)
+        // {
+        //     AddReward(0.1f);
+        // }
 
-        // Punishments
-        if (happiness == maxNeed)
-        {
-            AddReward(0.1f);
+        // // Punishments
+        // if (happiness == maxNeed)
+        // {
+        //     AddReward(0.1f);
 
-        }
+        // }
 
         if (thirst <= quaterFull)
         {
@@ -450,9 +454,9 @@ public class CatAgent : Agent
     private void ResetNeeds()
     {
         health = maxNeed;
-        thirst = Random.Range(maxNeed / 2, maxNeed);
-        hunger = Random.Range(maxNeed / 2, maxNeed);
-        happiness = Random.Range(maxNeed / 2, maxNeed);
+        thirst = Random.Range(maxNeed / 1.5f, maxNeed);
+        hunger = Random.Range(maxNeed / 1.5f, maxNeed);
+        happiness = Random.Range(maxNeed / 1.5f, maxNeed);
     }
 
     //-----------------------------------------
