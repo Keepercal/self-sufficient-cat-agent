@@ -32,3 +32,14 @@ Open Unity Hub, click "Add" then click "Add project from disk". Navigate to wher
 # Setting up Unity ML-Agents
 
 Please follow [this guide](https://github.com/Unity-Technologies/ml-agents/blob/develop/docs/Installation.md) to set up the Unity ML-Agents toolkit on your machine.
+
+# Training the environment
+Once ML-Agents has been installed onto your machine, you can begin training Wilbur's agent.
+<br/>
+1. Open a command or terminal window.
+2. Navigate to the folder where you cloned the ml-agents repository. Note: If you followed the default installation, then you should be able to run mlagents-learn from any directory.
+3. Copy the `cat_config.yaml` file from the `Additional Files` directory and paste it into `ml-agents/config`
+4. Run `mlagents-learn config/cat_config.yaml --run-id=firstWilburRun`.
+ - `config/cat_config.yaml` is the path to Wilbur's config file.
+ - `run-id` is a unique name for this training session.
+5. When the message "Start training by pressing the Play button in the Unity Editor" is displayed on the screen, you can press the Play button in Unity to start training in the Editor.
