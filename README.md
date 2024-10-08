@@ -38,7 +38,7 @@ Once ML-Agents has been installed onto your machine, you can begin training Wilb
 <br/>
 1. Open a command or terminal window.
 2. Navigate to the folder where you cloned the ml-agents repository. Note: If you followed the default installation, then you should be able to run mlagents-learn from any directory.
-3. Copy the `cat_config.yaml` file from the `Additional Files` directory and paste it into `ml-agents/config`
+3. Copy the `cat_config.yaml` file from the `AdditionalFiles/ConfigFiles` directory in the Git clone and paste it into `ml-agents/config`
 4. Run `mlagents-learn config/cat_config.yaml --run-id=firstWilburRun`.
  - `config/cat_config.yaml` is the path to Wilbur's config file.
  - `run-id` is a unique name for this training session.
