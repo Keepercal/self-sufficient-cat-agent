@@ -8,9 +8,15 @@ This project is in memory of Wilbur, a friend of Ralph Road and a good boy.
 
 # About this project
 
-Cat Simulator was born during my final year of university as the project that I developed as part of my dissertation. The simulation is comprised of a cat, "Wilbur", and three objects, a scratching post, a water bowl, and food. Wilbur is a machine-learning agent whose behaviour derives from a reinforcement learning script that I developed using the Unity ML-Agents package within the Unity Engine.
+Cat Simulator began as my dissertation project during my final year of university. The simulation environment comprises the agent "Wilbur", Wilbur's needs, and three regenerative objects: a Scratching Post, a Water Bowl, and a Food Bag. Wilbur has three needs:
 
-The premise of the simulation is that Wilbur is an agent with three needs; Hunger, Thirst, and Happiness. At every step during training, these needs decrease. Wilbur's objective is to keep his needs well-maintained by navigating his environment and using an object to replenish its respective needs. The more efficiently he does this, the more rewards he will receive. If Wilbur does not successfully maintain these needs, he will receive a punishment.
+- Hunger
+- Thirst
+- Happiness
+
+ Wilbur's behaviour derives from a reinforcement learning script that I developed using the Unity ML-Agents package within the Unity Engine. Wilbur is a machine learning agent network
+
+ At every step during training, these needs decrease. Wilbur's objective is to keep his needs well-maintained by navigating his environment and using an object to replenish its respective needs. The more efficiently he does this, the more rewards he will receive. If Wilbur does not successfully maintain these needs, he will receive a punishment.
 
 In its current form, Wilbur can only be trained within Unity. Upon pressing play you can observe Wilbur begin knowing nothing about his environment to navigate between the objects and maintain his needs.
 
