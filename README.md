@@ -1,6 +1,6 @@
 # Cat Simulator (WIP): Nurturing a Self-Sustaining Agent Using Reinforcement Learning
 
-This project is dedicated to Wilbur, forever a friend to those of Ralph Road and a good boy.
+This project is in memory of Wilbur, a friend of Ralph Road and a good boy.
 
 <p align="center">
   <img src="AdditionalFiles/Images/wilbur.jpeg" alt="Wilbur basking in the sunlight." height="450" />
