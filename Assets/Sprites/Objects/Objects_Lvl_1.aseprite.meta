@@ -212,6 +212,7 @@ ScriptedImporter:
     cells:
     - name: Objects_Lvl_1
       frameIndex: 0
+      additiveSortOrder: 0
       cellRect:
         x: 7
         y: 98
