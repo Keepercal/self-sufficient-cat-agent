@@ -32,9 +32,9 @@ public class EnvironmentManager : MonoBehaviour
 
         if (staticEnvironment == true)
         {
-            GameObject newObject1 = Instantiate(prefabsToSpawn[0], new Vector2(-6, 3), Quaternion.identity, objectParent);
-            GameObject newObject2 = Instantiate(prefabsToSpawn[1], new Vector2(-6, -3), Quaternion.identity, objectParent);
-            GameObject newObject3 = Instantiate(prefabsToSpawn[2], new Vector2(8, 3), Quaternion.identity, objectParent);
+            GameObject newObject1 = Instantiate(prefabsToSpawn[0], new Vector3(-6, 3, -1), Quaternion.identity, objectParent);
+            GameObject newObject2 = Instantiate(prefabsToSpawn[1], new Vector3(-6, -3, -1), Quaternion.identity, objectParent);
+            GameObject newObject3 = Instantiate(prefabsToSpawn[2], new Vector3(8, 3, -1), Quaternion.identity, objectParent);
         }
         
         else{
