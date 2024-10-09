@@ -6,7 +6,7 @@
 // mlagents-learn config/cat_config_ppo.yaml --run-id=DummyRun --force
 // tensorboard --logdir results --port 6006
 
-// CAT VERSION 1.0
+// CAT VERSION 1.1
 
 using System.Collections;
 using System.Collections.Generic;
