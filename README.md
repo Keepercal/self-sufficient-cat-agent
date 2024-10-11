@@ -68,7 +68,7 @@ Once conda has been installed in your system, open a terminal and execute the fo
 and activate it.
 
 ```shell
-conda create -n mlagents python=3.10.12 && conda activate mlagents
+conda create -n mlagents python=3.9.13 && conda activate mlagents
 ```
 
 ### Upgrade Pip
