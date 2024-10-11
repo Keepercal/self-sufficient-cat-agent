@@ -14,11 +14,7 @@ Cat Simulator began as my dissertation project during my final year of universit
 - Thirst
 - Happiness
 
- Wilbur's behaviour derives from a reinforcement learning script that I developed using the Unity ML-Agents package within the Unity Engine. Wilbur is a machine learning agent network
-
- At every step during training, these needs decrease. Wilbur's objective is to keep his needs well-maintained by navigating his environment and using an object to replenish its respective needs. The more efficiently he does this, the more rewards he will receive. If Wilbur does not successfully maintain these needs, he will receive a punishment.
-
-In its current form, Wilbur can only be trained within Unity. Upon pressing play you can observe Wilbur begin knowing nothing about his environment to navigate between the objects and maintain his needs.
+Wilbur's behaviour derives from a reinforcement learning script that I developed using the Unity ML-Agents package within the Unity Engine. After taking a step in the environment, these needs decrease. Wilbur's objective is to move between these objects to replenish his needs. The more efficiently he does this, the more rewards he will receive. In its current form, Wilbur can only be trained within Unity. Upon pressing play you can observe Wilbur begin knowing nothing about his environment to navigate between the objects and maintain his needs.
 
 # Setting Up
 
