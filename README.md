@@ -1,5 +1,11 @@
 # Cat Simulator (WIP): Nurturing a Self-Sustaining Agent Using Reinforcement Learning
 
+This project is in memory of Wilbur, a friend of Ralph Road and a good boy.
+
+<p align="center">
+  <img src="AdditionalFiles/Images/wilbur.jpeg" alt="Wilbur basking in the sunlight." height="450" />
+</p>
+
 # About this project
 
 Cat Simulator began as my dissertation project during my final year of university. The simulation environment comprises the agent "Wilbur", Wilbur's needs, and three regenerative objects: a Scratching Post, a Water Bowl, and a Food Bag. Wilbur has three needs:
@@ -139,9 +145,3 @@ Once ML-Agents has been installed onto your machine, you can begin training Wilb
 4. When the message "Start training by pressing the Play button in the Unity Editor" is displayed on the screen, you can press the Play button in Unity to start training in the Editor.
 <br/>
 Once a training session has been completed, the results will be saved to the `results` directory.
-
-This project is in memory of Wilbur, a friend of Ralph Road and a good boy.
-
-<p align="center">
-  <img src="AdditionalFiles/Images/wilbur.jpeg" alt="Wilbur basking in the sunlight." height="450" />
-</p>
